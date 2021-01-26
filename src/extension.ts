@@ -17,19 +17,8 @@ export function activate(context: vscode.ExtensionContext) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('extension.sayHello', () => {
-        // The code you place here will be executed every time your command is executed
-
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World!');
-    });
-
-    context.subscriptions.push(disposable);
-    context.subscriptions.push(vscode.commands.registerCommand('extension.vscexpress', () => {
-        vscexpress.open('index.html', 'VS Code Express Example', vscode.ViewColumn.One);
-    }));
-    context.subscriptions.push(vscode.commands.registerCommand('extension.vscexpressclose', (path: string) => {
-        vscexpress.close(path);
+    context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
+        vscexpress.open('getCoverage.html', 'SFDX Get Coverage', vscode.ViewColumn.One);
     }));
 }
 
