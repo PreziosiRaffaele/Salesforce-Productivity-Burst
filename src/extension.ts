@@ -2,7 +2,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import {VSCExpress} from 'vscode-express';
+//import {VSCExpress} from 'vscode-express';
+//import * as cp from 'child_process';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -12,16 +13,39 @@ export function activate(context: vscode.ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     // console.log('Congratulations, your extension "hello" is now active!');
 
-    const vscexpress = new VSCExpress(context, 'view');
+	//const vscexpress = new VSCExpress(context, 'view');
+	const fs = require('fs');
+	fs.readFile('/VSProjects/DeveloperEdition2/.sfdx/sfdx-config.json', 'utf8', function (err,data) {
+		if (err) {
+		  return console.log(err);
+		}
+		let json = JSON.parse(data)
+		var defaultOrg = console.log(json["defaultusername"]);
+	});
 
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with  registerCommand
-    // The commandId parameter must match the command field in package.json
+
+
     context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
-        vscexpress.open('getCoverage.html', 'SFDX Get Coverage', vscode.ViewColumn.One);
-    }));
+		const { exec } = require('child_process');
+
+		exec('sfdx force:data:soql:query -q "SELECT Id, Name, Account.Name FROM Contact LIMIT 1" -u "ra.preziosi@devedition.it"', (error, stdout, stderr) => {
+			if (error) {
+				console.error(`exec error: ${error}`);
+				return;
+			}
+				console.log(`stdout: ${stdout}`);
+				console.error(`stderr: ${stderr}`);
+		});
+		//vscexpress.open('getCoverage.html', 'SFDX Get Coverage', vscode.ViewColumn.One);
+		//posso ottenere i dettagli della org attraverso il comando display default org details for default org
+		//vscode.commands.executeCommand('sfdx.force.data.soql.query.selection');
+
+		//let command = 'sfdx force:data:soql:query -q "SELECT Id, Name, Account.Name FROM Contact"';
+
+	}));
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {
 }
+
