@@ -1,6 +1,6 @@
 {
-    "name": "hello",
-    "displayName": "hello",
+    "name": "Getcoverage",
+    "displayName": "Apex Get Coverage",
     "description": "",
     "version": "0.0.1",
     "publisher": "vsciot-vscode",
@@ -18,7 +18,7 @@
         "commands": [
             {
                 "command": "extension.getCoverage",
-                "title": "SFDX: Get Coverage"
+                "title": "Apex Get Coverage"
             }
         ]
     },

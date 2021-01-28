@@ -11,9 +11,14 @@ export function activate(context: vscode.ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
 
 	//const vscexpress = new VSCExpress(context, 'view');
+
+	var defaultOrg;
+	var userName;
+
     context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
 
 		let className = 'EnrollmentTriggerHandler';
+
 
 		const fs = require('fs');
 		fs.readFile('/VSProjects/DeveloperEdition2/.sfdx/sfdx-config.json', 'utf8', function (err,data) { //SOSTITUISCI IL PATH
@@ -21,36 +26,93 @@ export function activate(context: vscode.ExtensionContext) {
 			  return console.log(err);
 			}
 			let json = JSON.parse(data)
-			let defaultOrg = json["defaultusername"];
+			let defaultOrg2 = json["defaultusername"];
 
 			const { exec } = require('child_process');
 
-			exec('sfdx force:auth:list', (error, stdout, stderr) => {
-				if (error) {
-					console.error(`exec error: ${error}`);
-					return;
-				}
+			console.log(defaultOrg);
+			console.log(defaultOrg2);
 
-				console.log(`stdout: ${stdout}`);
-				let y = typeof(stdout);
-				console.log(y);
-				console.log(defaultOrg);
-
-				let userName = getUsername(stdout, defaultOrg);
-				console.log(userName);
-				console.error(`stderr: ${stderr}`);
-
-				let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -u ' + '"' + userName + '" --json';
-
-				exec(query, (error, stdout, stderr) => {
+			if(defaultOrg2 != defaultOrg){
+				defaultOrg = defaultOrg2
+				exec('sfdx force:auth:list', (error, stdout, stderr) => {
 					if (error) {
 						console.error(`exec error: ${error}`);
 						return;
 					}
-						console.log(`stdout: ${stdout}`);
-						console.error(`stderr: ${stderr}`);
+
+					console.log(`stdout: ${stdout}`);
+					let y = typeof(stdout);
+					console.log(y);
+					console.log(defaultOrg);
+
+					userName = getUsername(stdout, defaultOrg);
+					console.log(userName);
+					console.error(`stderr: ${stderr}`);
+
+					let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
+
+					exec(query, (error, stdout, stderr) => {
+						if (error) {
+							console.error(`exec error: ${error}`);
+							return;
+						}
+							console.log(`stdout: ${stdout}`);
+
+							let jsonCodeCoverage = JSON.parse(stdout);
+
+							let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
+							console.log(NumLinesCovered);
+							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
+							console.log(NumLinesUncovered);
+							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered);
+
+							console.log(percentuale);
+							console.error(`stderr: ${stderr}`);
+							let message = className + ' -- ';
+							message += 	'Coverage : ' + percentuale + '%' + ' -- ';
+							message +=	'Number Lines Covered : ' + NumLinesCovered + ' -- ';
+							message +=	'Number Lines Uncovered : ' + NumLinesUncovered;
+							if(percentuale < 75){
+								let numeroDiLineeRimanenti = 75/100*(NumLinesCovered + NumLinesUncovered) - NumLinesCovered;
+								message += ' -- ' +	'Number Lines To Reach 75% : ' + numeroDiLineeRimanenti;
+							}
+							vscode.window.showInformationMessage(message);
+					});
 				});
-			});
+			}else{
+				let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
+
+					exec(query, (error, stdout, stderr) => {
+						if (error) {
+							console.error(`exec error: ${error}`);
+							return;
+						}
+							console.log(`stdout: ${stdout}`);
+
+							let jsonCodeCoverage = JSON.parse(stdout);
+
+							let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
+							console.log(NumLinesCovered);
+							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
+							console.log(NumLinesUncovered);
+							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered);
+
+							console.log(percentuale);
+							console.error(`stderr: ${stderr}`);
+							let message = className + ' -- ';
+							message += 	'Coverage : ' + percentuale + '%' + ' -- ';
+							message +=	'Number Lines Covered : ' + NumLinesCovered + ' -- ';
+							message +=	'Number Lines Uncovered : ' + NumLinesUncovered;
+							if(percentuale < 75){
+								let numeroDiLineeRimanenti = 75/100*(NumLinesCovered + NumLinesUncovered) - NumLinesCovered;
+								message += ' -- ' +	'Number Lines To Reach 75% : ' + numeroDiLineeRimanenti;
+							}
+							vscode.window.showInformationMessage(message);
+					});
+			}
+
+
 		});
 
 		/* 	SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = 'DeliveryConstants'*/
