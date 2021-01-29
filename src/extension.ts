@@ -16,12 +16,25 @@ export function activate(context: vscode.ExtensionContext) {
 	var userName;
 
     context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
+		let openedClass = vscode.window.activeTextEditor;
 
-		let className = 'EnrollmentTriggerHandler';
+		let uri = openedClass.document.fileName;
 
+		let indiceIniziale = uri.lastIndexOf("\\");
+		let indiceFinale = uri.lastIndexOf(".");
+		let extension = uri.substring(indiceFinale);
+		console.log(extension);
+		if(indiceFinale < 0 || indiceIniziale < 0 || extension != '.cls'){
+			let message = 'Apex Class not found';
+			vscode.window.showInformationMessage(message);
+			return;
+		}
+		let className = uri.substring(indiceIniziale + 1,indiceFinale);
+
+		console.log(className);
 
 		const fs = require('fs');
-		fs.readFile('/VSProjects/DeveloperEdition2/.sfdx/sfdx-config.json', 'utf8', function (err,data) { //SOSTITUISCI IL PATH
+		fs.readFile('./.sfdx/sfdx-config.json', 'utf8', function (err,data) { //SOSTITUISCI IL PATH
 			if (err) {
 			  return console.log(err);
 			}
