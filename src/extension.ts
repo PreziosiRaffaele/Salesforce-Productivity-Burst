@@ -29,12 +29,15 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.window.showInformationMessage(message);
 			return;
 		}
-		let className = uri.substring(indiceIniziale + 1,indiceFinale);
+		let className = uri.substring(indiceIniziale+1,indiceFinale);
 
 		console.log(className);
 
+		let indiceUrl = uri.lastIndexOf("force-app");
+		let uri2 = uri.substring(0,indiceUrl) + ".sfdx/sfdx-config.json";
+		console.log(uri2);
 		const fs = require('fs');
-		fs.readFile('./.sfdx/sfdx-config.json', 'utf8', function (err,data) { //SOSTITUISCI IL PATH
+		fs.readFile(uri2, 'utf8', function (err,data) { //SOSTITUISCI IL PATH
 			if (err) {
 			  return console.log(err);
 			}
@@ -78,7 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
 							console.log(NumLinesCovered);
 							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
 							console.log(NumLinesUncovered);
-							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered);
+							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
 
 							console.log(percentuale);
 							console.error(`stderr: ${stderr}`);
@@ -109,7 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
 							console.log(NumLinesCovered);
 							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
 							console.log(NumLinesUncovered);
-							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered);
+							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
 
 							console.log(percentuale);
 							console.error(`stderr: ${stderr}`);
@@ -164,3 +167,4 @@ function getUsername(orgList, defaultOrg){
 
 	return arrayWordsSenzaSpazi[1].trim();
 }
+
