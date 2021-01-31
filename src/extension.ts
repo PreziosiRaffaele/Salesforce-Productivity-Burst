@@ -12,42 +12,33 @@ export function activate(context: vscode.ExtensionContext) {
 
 	//const vscexpress = new VSCExpress(context, 'view');
 
-	var defaultOrg;
-	var userName;
+	let defaultOrg;
+	let userName;
+	const fs = require('fs');
+	const { exec } = require('child_process');
 
     context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
 		let openedClass = vscode.window.activeTextEditor;
-
-		let uri = openedClass.document.fileName;
-
-		let indiceIniziale = uri.lastIndexOf("\\");
-		let indiceFinale = uri.lastIndexOf(".");
-		let extension = uri.substring(indiceFinale);
-		console.log(extension);
-		if(indiceFinale < 0 || indiceIniziale < 0 || extension != '.cls'){
-			let message = 'Apex Class not found';
-			vscode.window.showInformationMessage(message);
+		let pathClass = openedClass.document.fileName;
+		let extension = pathClass.substring(pathClass.lastIndexOf("."));
+		if(!openedClass || !pathClass || extension != '.cls'){
+			vscode.window.showInformationMessage('Apex Class not found');
 			return;
 		}
-		let className = uri.substring(indiceIniziale+1,indiceFinale);
+
+		let className = pathClass.substring(pathClass.lastIndexOf("\\")+1,pathClass.lastIndexOf("."));
 
 		console.log(className);
 
-		let indiceUrl = uri.lastIndexOf("force-app");
-		let uri2 = uri.substring(0,indiceUrl) + ".sfdx/sfdx-config.json";
-		console.log(uri2);
-		const fs = require('fs');
-		fs.readFile(uri2, 'utf8', function (err,data) { //SOSTITUISCI IL PATH
+		let sfdxConfigPath = pathClass.substring(0,pathClass.lastIndexOf("force-app")) + ".sfdx/sfdx-config.json";
+		console.log(sfdxConfigPath);
+
+		fs.readFile(sfdxConfigPath, 'utf8', function (err,data) { //SOSTITUISCI IL PATH
 			if (err) {
 			  return console.log(err);
 			}
 			let json = JSON.parse(data)
 			let defaultOrg2 = json["defaultusername"];
-
-			const { exec } = require('child_process');
-
-			console.log(defaultOrg);
-			console.log(defaultOrg2);
 
 			if(defaultOrg2 != defaultOrg){
 				defaultOrg = defaultOrg2
@@ -57,14 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
 						return;
 					}
 
-					console.log(`stdout: ${stdout}`);
-					let y = typeof(stdout);
-					console.log(y);
-					console.log(defaultOrg);
-
 					userName = getUsername(stdout, defaultOrg);
-					console.log(userName);
-					console.error(`stderr: ${stderr}`);
 
 					let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
 
@@ -78,13 +62,9 @@ export function activate(context: vscode.ExtensionContext) {
 							let jsonCodeCoverage = JSON.parse(stdout);
 
 							let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
-							console.log(NumLinesCovered);
 							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
-							console.log(NumLinesUncovered);
 							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
 
-							console.log(percentuale);
-							console.error(`stderr: ${stderr}`);
 							let message = className + ' -- ';
 							message += 	'Coverage : ' + percentuale + '%' + ' -- ';
 							message +=	'Number Lines Covered : ' + NumLinesCovered + ' -- ';
@@ -104,18 +84,13 @@ export function activate(context: vscode.ExtensionContext) {
 							console.error(`exec error: ${error}`);
 							return;
 						}
-							console.log(`stdout: ${stdout}`);
 
 							let jsonCodeCoverage = JSON.parse(stdout);
 
 							let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
-							console.log(NumLinesCovered);
 							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
-							console.log(NumLinesUncovered);
 							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
 
-							console.log(percentuale);
-							console.error(`stderr: ${stderr}`);
 							let message = className + ' -- ';
 							message += 	'Coverage : ' + percentuale + '%' + ' -- ';
 							message +=	'Number Lines Covered : ' + NumLinesCovered + ' -- ';
@@ -150,10 +125,6 @@ function getUsername(orgList, defaultOrg){
 	let posFinaleRiga = orgList.indexOf("\n", posInizialeRiga);
 
 	let riga = orgList.substring(posInizialeRiga,posFinaleRiga);
-	console.log("orgList" + orgList);
-	console.log("defaultOrg" + defaultOrg);
-	console.log("posInizialeRiga" + posInizialeRiga);
-	console.log("posFinaleRiga" + posFinaleRiga);
 
 	let arrayWords = riga.split(" ");
 	let arrayWordsSenzaSpazi = [];
