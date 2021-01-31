@@ -50,92 +50,73 @@ export function activate(context: vscode.ExtensionContext) {
 
 					userName = getUsername(stdout, defaultOrg);
 
-					let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
-
-					exec(query, (error, stdout, stderr) => {
-						if (error) {
-							console.error(`exec error: ${error}`);
-							return;
-						}
-							console.log(`stdout: ${stdout}`);
-
-							let jsonCodeCoverage = JSON.parse(stdout);
-
-							let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
-							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
-							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
-
-							let message = className + ' -- ';
-							message += 	'Coverage : ' + percentuale + '%' + ' -- ';
-							message +=	'Number Lines Covered : ' + NumLinesCovered + ' -- ';
-							message +=	'Number Lines Uncovered : ' + NumLinesUncovered;
-							if(percentuale < 75){
-								let numeroDiLineeRimanenti = 75/100*(NumLinesCovered + NumLinesUncovered) - NumLinesCovered;
-								message += ' -- ' +	'Number Lines To Reach 75% : ' + numeroDiLineeRimanenti;
-							}
-							vscode.window.showInformationMessage(message);
-					});
+					getCoverage(className);
 				});
 			}else{
-				let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
-
-					exec(query, (error, stdout, stderr) => {
-						if (error) {
-							console.error(`exec error: ${error}`);
-							return;
-						}
-
-							let jsonCodeCoverage = JSON.parse(stdout);
-
-							let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
-							let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
-							let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
-
-							let message = className + ' -- ';
-							message += 	'Coverage : ' + percentuale + '%' + ' -- ';
-							message +=	'Number Lines Covered : ' + NumLinesCovered + ' -- ';
-							message +=	'Number Lines Uncovered : ' + NumLinesUncovered;
-							if(percentuale < 75){
-								let numeroDiLineeRimanenti = 75/100*(NumLinesCovered + NumLinesUncovered) - NumLinesCovered;
-								message += ' -- ' +	'Number Lines To Reach 75% : ' + numeroDiLineeRimanenti;
-							}
-							vscode.window.showInformationMessage(message);
-					});
+				getCoverage(className);
 			}
 
 
 		});
 
-		/* 	SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = 'DeliveryConstants'*/
-
-		//vscexpress.open('getCoverage.html', 'SFDX Get Coverage', vscode.ViewColumn.One);
-		//posso ottenere i dettagli della org attraverso il comando display default org details for default org
-		//vscode.commands.executeCommand('sfdx.force.data.soql.query.selection');
-		//let command = 'sfdx force:data:soql:query -q "SELECT Id, Name, Account.Name FROM Contact"';
-
 	}));
+
+	function getCoverage(className){
+		let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
+
+		exec(query, (error, stdout, stderr) => {
+			if (error) {
+				console.error(`exec error: ${error}`);
+				return;
+			}
+				console.log(`stdout: ${stdout}`);
+
+				let jsonCodeCoverage = JSON.parse(stdout);
+
+				let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
+				let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
+				let percentuale = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
+
+				let message = className + ' -- ';
+				message += 	'Coverage : ' + percentuale + '%' + ' -- ';
+				message +=	'Number Lines Covered : ' + NumLinesCovered + ' -- ';
+				message +=	'Number Lines Uncovered : ' + NumLinesUncovered;
+				if(percentuale < 75){
+					let numeroDiLineeRimanenti = 75/100*(NumLinesCovered + NumLinesUncovered) - NumLinesCovered;
+					message += ' -- ' +	'Number Lines To Reach 75% : ' + numeroDiLineeRimanenti;
+				}
+				vscode.window.showInformationMessage(message);
+		});
+	}
+
+	function getUsername(orgList, defaultOrg){
+		let posInizialeRiga = orgList.indexOf(defaultOrg);
+		let posFinaleRiga = orgList.indexOf("\n", posInizialeRiga);
+
+		let riga = orgList.substring(posInizialeRiga,posFinaleRiga);
+
+		let arrayWords = riga.split(" ");
+		let arrayWordsSenzaSpazi = [];
+
+		arrayWords.forEach(function(element){
+			if(element)
+			{
+				arrayWordsSenzaSpazi.push(element);
+			}
+		});
+
+		return arrayWordsSenzaSpazi[1].trim();
+	}
+
+	/* 	SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = 'DeliveryConstants'*/
+
+	//vscexpress.open('getCoverage.html', 'SFDX Get Coverage', vscode.ViewColumn.One);
+	//posso ottenere i dettagli della org attraverso il comando display default org details for default org
+	//vscode.commands.executeCommand('sfdx.force.data.soql.query.selection');
+	//let command = 'sfdx force:data:soql:query -q "SELECT Id, Name, Account.Name FROM Contact"';
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {
-}
-
-function getUsername(orgList, defaultOrg){
-	let posInizialeRiga = orgList.indexOf(defaultOrg);
-	let posFinaleRiga = orgList.indexOf("\n", posInizialeRiga);
-
-	let riga = orgList.substring(posInizialeRiga,posFinaleRiga);
-
-	let arrayWords = riga.split(" ");
-	let arrayWordsSenzaSpazi = [];
-
-	arrayWords.forEach(function(element){
-		if(element)
-		{
-			arrayWordsSenzaSpazi.push(element);
-		}
-	});
-
-	return arrayWordsSenzaSpazi[1].trim();
 }
 
