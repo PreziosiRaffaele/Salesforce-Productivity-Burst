@@ -41,10 +41,6 @@ export function activate(context: vscode.ExtensionContext) {
 		openedClass.setDecorations(coveredLinesDecorationType, []);
 		openedClass.setDecorations(uncoveredLinesDecorationType, []);
 
-		// let range = [new vscode.Range(new vscode.Position(1,0), new vscode.Position(3,20)), new vscode.Range(new vscode.Position(1,0), new vscode.Position(4,20))];
-
-		// openedClass.setDecorations(coveredLinesDecorationType, range);
-
 		const pathClass = openedClass.document.fileName;
 
 		if(isInvalidFile(pathClass)){
@@ -75,10 +71,11 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		const REFRESH_DATA = 'Refresh Data';
+		const TOTAL_COVERAGE = 'Total Coverage';
 		let options = [REFRESH_DATA];
 		let recordTotalCoverage = mapNameClass_TotalCoverage.get(className)[0];
 		let methodCoverage = (recordTotalCoverage.NumLinesCovered / (recordTotalCoverage.NumLinesCovered + recordTotalCoverage.NumLinesUncovered)) * 100;
-		options.push('Total Coverage' + ' - ' + methodCoverage.toFixed(2) + '%');
+		options.push(TOTAL_COVERAGE + ' - ' + methodCoverage.toFixed(2) + '%');
 
 		//highlightCoverage(recordTotalCoverage.Coverage, openedClass);
 
@@ -92,17 +89,17 @@ export function activate(context: vscode.ExtensionContext) {
 		console.log(options);
 
 		vscode.window.showQuickPick(options).then(selection => {
-			// the user canceled the selection
 			if (!selection) {
 			  return;
 			}
+
 			let selected = selection.split(' - ')[0].trim();
 
 			if(selection == REFRESH_DATA){
 				mapNameClass_MapMethodName_Coverage.delete(className);
 				mapNameClass_TotalCoverage.delete(className);
 				vscode.commands.executeCommand('extension.getCoverage');
-			}else if(selected == 'Total Coverage'){
+			}else if(selected == TOTAL_COVERAGE){
 				highlightCoverage(recordTotalCoverage.Coverage, openedClass);
 			}else{
 				highlightCoverage(mapMethodName_Coverage.get(selected).Coverage, openedClass);
