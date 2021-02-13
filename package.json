@@ -1,9 +1,9 @@
 {
     "name": "Getcoverage",
     "displayName": "Apex Get Coverage",
-    "description": "",
+    "description": "Get Coverage of your Apex Classes/Triggers",
     "version": "0.0.1",
-    "publisher": "vsciot-vscode",
+    "publisher": "Raffaele Preziosi",
     "engines": {
         "vscode": "^1.23.0"
     },
@@ -18,7 +18,7 @@
         "commands": [
             {
                 "command": "extension.getCoverage",
-                "title": "Apex Get Coverage"
+                "title": "SFDX: Apex Get Coverage"
             }
         ]
     },
