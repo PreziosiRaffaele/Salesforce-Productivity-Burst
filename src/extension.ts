@@ -52,6 +52,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const sfdxConfigPath = pathClass.substring(0,pathClass.lastIndexOf("force-app")) + ".sfdx/sfdx-config.json";
 
+		if(!sfdxConfigPath){
+			vscode.window.showInformationMessage('sfdx-config.json not found');
+			return;
+		}
+
 		const json = JSON.parse(fs.readFileSync(sfdxConfigPath));
 
 		let currentSfOrg = json["defaultusername"];
@@ -76,8 +81,6 @@ export function activate(context: vscode.ExtensionContext) {
 		let recordTotalCoverage = mapNameClass_TotalCoverage.get(className)[0];
 		let methodCoverage = (recordTotalCoverage.NumLinesCovered / (recordTotalCoverage.NumLinesCovered + recordTotalCoverage.NumLinesUncovered)) * 100;
 		options.push(TOTAL_COVERAGE + ' - ' + methodCoverage.toFixed(2) + '%');
-
-		//highlightCoverage(recordTotalCoverage.Coverage, openedClass);
 
 		let mapMethodName_Coverage = mapNameClass_MapMethodName_Coverage.get(className);
 
