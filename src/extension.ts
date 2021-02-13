@@ -23,16 +23,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let coveredLinesDecorationType = vscode.window.createTextEditorDecorationType(
 	{
-		backgroundColor: lime(0.5),
+		backgroundColor: lime(0.3),
 		borderRadius: '.2em',
-		overviewRulerColor: lime(0.5)
+		overviewRulerColor: lime(0.3)
 	});
 
 	let uncoveredLinesDecorationType = vscode.window.createTextEditorDecorationType(
 	{
-		backgroundColor: red(0.5),
+		backgroundColor: red(0.3),
 		borderRadius: '.2em',
-		overviewRulerColor: red(0.5)
+		overviewRulerColor: red(0.3)
 	});
 
     context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
