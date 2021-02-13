@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const pathClass = openedClass.document.fileName;
 
 		if(isInvalidFile(pathClass)){
-			vscode.window.showInformationMessage('Apex Class not found');
+			vscode.window.showInformationMessage('Apex Class or Trigger not found');
 			return;
 		}
 
@@ -74,8 +74,8 @@ export function activate(context: vscode.ExtensionContext) {
 			getClassTotalCoverage(className);
 		}
 
-		const refresh_data = 'Refresh Data';
-		let options = [refresh_data];
+		const REFRESH_DATA = 'Refresh Data';
+		let options = [REFRESH_DATA];
 		let recordTotalCoverage = mapNameClass_TotalCoverage.get(className)[0];
 		let methodCoverage = (recordTotalCoverage.NumLinesCovered / (recordTotalCoverage.NumLinesCovered + recordTotalCoverage.NumLinesUncovered)) * 100;
 		options.push('Total Coverage' + ' - ' + methodCoverage.toFixed(2) + '%');
@@ -98,8 +98,10 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			let selected = selection.split(' - ')[0].trim();
 
-			if(selection == refresh_data){
-
+			if(selection == REFRESH_DATA){
+				mapNameClass_MapMethodName_Coverage.delete(className);
+				mapNameClass_TotalCoverage.delete(className);
+				vscode.commands.executeCommand('extension.getCoverage');
 			}else if(selected == 'Total Coverage'){
 				highlightCoverage(recordTotalCoverage.Coverage, openedClass);
 			}else{
