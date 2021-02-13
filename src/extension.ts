@@ -10,19 +10,41 @@ export function activate(context: vscode.ExtensionContext) {
 
     // This line of code will only be executed once when your extension is activated
 
-	//const vscexpress = new VSCExpress(context, 'view');
-
 	let defaultOrg;
 	let userName;
 	const fs = require('fs');
 	const { execSync } = require('child_process');
 
-	let mapNameClass_MapMethodName_Coverage = new Map();
-	let mapNameClass_TotalCoverage = new Map();
+	let mapNameClass_MapMethodName_Coverage;
+	let mapNameClass_TotalCoverage;
+
+	const lime = (opacity: number): string => `rgba(45, 121, 11, ${opacity})`;
+	const red = (opacity: number): string => `rgba(253, 72, 73, ${opacity})`;
+
+	let coveredLinesDecorationType = vscode.window.createTextEditorDecorationType(
+	{
+		backgroundColor: lime(0.5),
+		borderRadius: '.2em',
+		overviewRulerColor: lime(0.5)
+	});
+
+	let uncoveredLinesDecorationType = vscode.window.createTextEditorDecorationType(
+	{
+		backgroundColor: red(0.5),
+		borderRadius: '.2em',
+		overviewRulerColor: red(0.5)
+	});
 
     context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
 
 		const openedClass = vscode.window.activeTextEditor;
+		openedClass.setDecorations(coveredLinesDecorationType, []);
+		openedClass.setDecorations(uncoveredLinesDecorationType, []);
+
+		// let range = [new vscode.Range(new vscode.Position(1,0), new vscode.Position(3,20)), new vscode.Range(new vscode.Position(1,0), new vscode.Position(4,20))];
+
+		// openedClass.setDecorations(coveredLinesDecorationType, range);
+
 		const pathClass = openedClass.document.fileName;
 
 		if(isInvalidFile(pathClass)){
@@ -32,46 +54,58 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const className = pathClass.substring(pathClass.lastIndexOf("\\")+1,pathClass.lastIndexOf("."));
 
+		const sfdxConfigPath = pathClass.substring(0,pathClass.lastIndexOf("force-app")) + ".sfdx/sfdx-config.json";
+
+		const json = JSON.parse(fs.readFileSync(sfdxConfigPath));
+
+		let currentSfOrg = json["defaultusername"];
+
+		if(currentSfOrg != defaultOrg){ //L'utente ha cambiato ORG
+			mapNameClass_MapMethodName_Coverage = new Map();
+			mapNameClass_TotalCoverage = new Map();
+			defaultOrg = currentSfOrg;
+			let result = execSync('sfdx force:auth:list');
+			userName = getUsername(result.toString(), defaultOrg);
+			console.log(userName);
+		}
+
 		if(!mapNameClass_MapMethodName_Coverage.has(className)){
-			const sfdxConfigPath = pathClass.substring(0,pathClass.lastIndexOf("force-app")) + ".sfdx/sfdx-config.json";
-
-			const json = JSON.parse(fs.readFileSync(sfdxConfigPath));
-
-			let currentSfOrg = json["defaultusername"];
-
-			if(currentSfOrg != defaultOrg){ //L'utente ha cambiato ORG
-				defaultOrg = currentSfOrg;
-				let result = execSync('sfdx force:auth:list');
-				userName = getUsername(result.toString(), defaultOrg);
-				console.log(userName);
-			}
-
 			getTestMethodsCoverage(className);
 			getClassTotalCoverage(className);
 		}
 
-		let totalCoverage = 'Total Coverage - ' + mapNameClass_TotalCoverage.get(className) + '%';
 		const refresh_data = 'Refresh Data';
-		let items = [refresh_data, totalCoverage];
+		let options = [refresh_data];
+		let recordTotalCoverage = mapNameClass_TotalCoverage.get(className)[0];
+		let methodCoverage = (recordTotalCoverage.NumLinesCovered / (recordTotalCoverage.NumLinesCovered + recordTotalCoverage.NumLinesUncovered)) * 100;
+		options.push('Total Coverage' + ' - ' + methodCoverage.toFixed(2) + '%');
+
+		//highlightCoverage(recordTotalCoverage.Coverage, openedClass);
+
 		let mapMethodName_Coverage = mapNameClass_MapMethodName_Coverage.get(className);
 
 		for (const entry of mapMethodName_Coverage.entries()) {
 			let methodCoverage = (entry[1].NumLinesCovered / (entry[1].NumLinesCovered + entry[1].NumLinesUncovered)) * 100;
-			items.push(entry[0] + ' - ' + methodCoverage.toFixed(2) + '%');
+			options.push(entry[0] + ' - ' + methodCoverage.toFixed(2) + '%');
 		}
 
-		console.log(items);
+		console.log(options);
 
-		vscode.window.showQuickPick(items, {
-			onDidSelectItem: (item) => {
-			   // do something with item
-			}
-		}).then((selection) => {
-			// User made final selection
+		vscode.window.showQuickPick(options).then(selection => {
+			// the user canceled the selection
 			if (!selection) {
-				return
+			  return;
 			}
-		})
+			let selected = selection.split(' - ')[0].trim();
+
+			if(selection == refresh_data){
+
+			}else if(selected == 'Total Coverage'){
+				highlightCoverage(recordTotalCoverage.Coverage, openedClass);
+			}else{
+				highlightCoverage(mapMethodName_Coverage.get(selected).Coverage, openedClass);
+			}
+		});
 
 	}));
 
@@ -95,17 +129,13 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	function getClassTotalCoverage(className){
-		let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
+		let query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered, Coverage FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + userName + '" --json';
 
 		let resultQuery = execSync(query);
 
-		let jsonCodeCoverage = JSON.parse(resultQuery);
+		let records = JSON.parse(resultQuery)["result"].records;
 
-		let NumLinesCovered = jsonCodeCoverage["result"].records[0].NumLinesCovered;
-		let NumLinesUncovered = jsonCodeCoverage["result"].records[0].NumLinesUncovered;
-		let totalCoverage = NumLinesCovered/(NumLinesCovered + NumLinesUncovered) * 100;
-
-		mapNameClass_TotalCoverage.set(className,totalCoverage.toFixed(2));
+		mapNameClass_TotalCoverage.set(className, records);
 
 	}
 
@@ -142,12 +172,23 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
-	/* 	SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = 'DeliveryConstants'*/
-	// Select TestMethodName, NumLinesCovered, NumLinesUncovered, Coverage from ApexCodeCoverage where ApexClassOrTrigger.name = 'DeliveryUtils' order by createddate desc LIMIT 10
-	//vscexpress.open('getCoverage.html', 'SFDX Get Coverage', vscode.ViewColumn.One);
-	//posso ottenere i dettagli della org attraverso il comando display default org details for default org
-	//vscode.commands.executeCommand('sfdx.force.data.soql.query.selection');
-	//let command = 'sfdx force:data:soql:query -q "SELECT Id, Name, Account.Name FROM Contact"';
+	function getRange(lines){
+		let coveredRange = [];
+		const Max_VALUE = 1000;
+		for(const line of lines){
+			let range = new vscode.Range((line-1),0,(line-1),Max_VALUE);
+			coveredRange.push(range);
+		}
+		return coveredRange;
+	}
+
+	function highlightCoverage(coverageObject, openedClass){
+		let coveredRange = getRange(coverageObject.coveredLines);
+		let uncoveredRange = getRange(coverageObject.uncoveredLines);
+
+		openedClass.setDecorations(coveredLinesDecorationType, coveredRange);
+		openedClass.setDecorations(uncoveredLinesDecorationType, uncoveredRange);
+	}
 }
 
 // this method is called when your extension is deactivated
