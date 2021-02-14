@@ -1,15 +1,18 @@
 {
-    "name": "Getcoverage",
+    "name": "apexgetcoverage",
     "displayName": "Apex Get Coverage",
     "description": "Get Coverage of your Apex Classes/Triggers",
     "version": "0.0.1",
-    "publisher": "Raffaele Preziosi",
+    "publisher": "RaffaelePreziosi",
     "engines": {
         "vscode": "^1.23.0"
     },
     "categories": [
-        "Other"
+        "Extension Packs"
     ],
+	"keywords":[
+		"Salesforce", "Apex", "Test"
+	],
     "activationEvents": [
         "onCommand:extension.getCoverage"
     ],
@@ -34,8 +37,5 @@
         "@types/node": "^7.0.43",
         "typescript": "^2.6.1",
         "vscode": "^1.1.30"
-    },
-    "dependencies": {
-        "vscode-express": "^1.0.0"
     }
 }
