@@ -38,8 +38,10 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
 
 		const openedClass = vscode.window.activeTextEditor;
-		openedClass.setDecorations(coveredLinesDecorationType, []);
-		openedClass.setDecorations(uncoveredLinesDecorationType, []);
+		if(!openedClass){
+			vscode.window.showInformationMessage('Apex Class or Trigger not found');
+			return;
+		}
 
 		const pathClass = openedClass.document.fileName;
 
@@ -47,6 +49,9 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.window.showInformationMessage('Apex Class or Trigger not found');
 			return;
 		}
+
+		openedClass.setDecorations(coveredLinesDecorationType, []);
+		openedClass.setDecorations(uncoveredLinesDecorationType, []);
 
 		const className = pathClass.substring(pathClass.lastIndexOf("\\")+1,pathClass.lastIndexOf("."));
 
@@ -64,10 +69,20 @@ export function activate(context: vscode.ExtensionContext) {
 		if(currentSfOrg != defaultOrg){ //L'utente ha cambiato ORG
 			mapNameClass_MapMethodName_Coverage = new Map();
 			mapNameClass_TotalCoverage = new Map();
+			userName = null;
 			defaultOrg = currentSfOrg;
-			let result = execSync('sfdx force:auth:list');
-			userName = getUsername(result.toString(), defaultOrg);
-			console.log(userName);
+			let response = execSync('sfdx force:auth:list --json');
+			let jsonResponse = JSON.parse(response);
+			for(const accessOrg of jsonResponse.result){
+				if(accessOrg.alias == defaultOrg){
+					userName = accessOrg.username;
+					break;
+				}
+			}
+			if(!userName){
+				vscode.window.showInformationMessage('Org not authorized');
+				return;
+			}
 		}
 
 		if(!mapNameClass_MapMethodName_Coverage.has(className)){
@@ -139,25 +154,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 		mapNameClass_TotalCoverage.set(className, records);
 
-	}
-
-	function getUsername(orgList, defaultOrg){
-		let posInizialeRiga = orgList.indexOf(defaultOrg);
-		let posFinaleRiga = orgList.indexOf("\n", posInizialeRiga);
-
-		let riga = orgList.substring(posInizialeRiga,posFinaleRiga);
-
-		let arrayWords = riga.split(" ");
-		let arrayWordsSenzaSpazi = [];
-
-		arrayWords.forEach(function(element){
-			if(element)
-			{
-				arrayWordsSenzaSpazi.push(element);
-			}
-		});
-
-		return arrayWordsSenzaSpazi[1].trim();
 	}
 
 	function isInvalidFile(pathClass){
