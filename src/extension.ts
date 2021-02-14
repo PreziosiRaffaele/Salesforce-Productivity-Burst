@@ -127,7 +127,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	function getTestMethodsCoverage(className){
-		let query = 'sfdx force:data:soql:query -q "Select TestMethodName, NumLinesCovered, NumLinesUncovered, Coverage from ApexCodeCoverage where ApexClassOrTrigger.name = \'' + className + '\' order by createddate desc LIMIT 20" -t -u ' + '"' + userName + '" --json';
+		let query = 'sfdx force:data:soql:query -q "Select ApexTestClass.Name,TestMethodName, NumLinesCovered, NumLinesUncovered, Coverage from ApexCodeCoverage where ApexClassOrTrigger.name = \'' + className + '\' order by createddate desc LIMIT 20" -t -u ' + '"' + userName + '" --json';
 
 		let resultQuery = execSync(query);
 
@@ -138,7 +138,7 @@ export function activate(context: vscode.ExtensionContext) {
 		console.log(records);
 
 		records.forEach(record => {
-			mapMethodName_Coverage.set(record.TestMethodName, record);
+			mapMethodName_Coverage.set(record.ApexTestClass.Name + '.' + record.TestMethodName, record);
 		});
 
 		mapNameClass_MapMethodName_Coverage.set(className, mapMethodName_Coverage);

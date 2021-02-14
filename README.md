@@ -6,3 +6,5 @@ Instructions:
 3) Select the test and highlight covered/uncovered lines
 
 Tip: disable retrieve-test-code-coverage from setting to speed up your test
+
+![Getting Started](demo.gif)
