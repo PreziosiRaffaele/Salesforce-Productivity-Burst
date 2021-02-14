@@ -86,8 +86,12 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		if(!mapNameClass_MapMethodName_Coverage.has(className)){
-			getTestMethodsCoverage(className);
-			getClassTotalCoverage(className);
+			getClassCoverage(className);
+		}
+
+		if(!mapNameClass_MapMethodName_Coverage.has(className)){
+			vscode.window.showInformationMessage('No Coverage found for this Class/Trigger. Run Test Class!');
+			return;
 		}
 
 		const REFRESH_DATA = 'Refresh Data';
@@ -103,8 +107,6 @@ export function activate(context: vscode.ExtensionContext) {
 			let methodCoverage = (entry[1].NumLinesCovered / (entry[1].NumLinesCovered + entry[1].NumLinesUncovered)) * 100;
 			options.push(entry[0] + ' - ' + methodCoverage.toFixed(2) + '%');
 		}
-
-		console.log(options);
 
 		vscode.window.showQuickPick(options).then(selection => {
 			if (!selection) {
@@ -126,23 +128,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 	}));
 
-	function getTestMethodsCoverage(className){
+	function getClassCoverage(className){
 		let query = 'sfdx force:data:soql:query -q "Select ApexTestClass.Name,TestMethodName, NumLinesCovered, NumLinesUncovered, Coverage from ApexCodeCoverage where ApexClassOrTrigger.name = \'' + className + '\' order by createddate desc LIMIT 20" -t -u ' + '"' + userName + '" --json';
 
 		let resultQuery = execSync(query);
-
-		let mapMethodName_Coverage = new Map();
-
 		let records = JSON.parse(resultQuery)["result"].records;
 
-		console.log(records);
+		if(records.length > 0){
+			let mapMethodName_Coverage = new Map();
+			records.forEach(record => {
+				mapMethodName_Coverage.set(record.ApexTestClass.Name + '.' + record.TestMethodName, record);
+			});
 
-		records.forEach(record => {
-			mapMethodName_Coverage.set(record.ApexTestClass.Name + '.' + record.TestMethodName, record);
-		});
-
-		mapNameClass_MapMethodName_Coverage.set(className, mapMethodName_Coverage);
-
+			mapNameClass_MapMethodName_Coverage.set(className, mapMethodName_Coverage);
+			getClassTotalCoverage(className);
+		}
 	}
 
 	function getClassTotalCoverage(className){
