@@ -2,44 +2,46 @@
 import { Stato } from './stato';
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
-import { getCurrentOrg, isInvalidFile, getCurrentClassName,highlightCoverage} from './Utils';
+import { getCurrentOrg, isInvalidFile, getCurrentClassName,highlightCoverage,cleanCoverage} from './Utils';
 import * as vscode from 'vscode';
+const REFRESH_DATA = 'Refresh Data';
+const TOTAL_COVERAGE = 'Total Coverage';
 
 
 export async function run(status : Stato) {
 
   const openedClass = vscode.window.activeTextEditor;
-  if(isInvalidFile(openedClass)){
+  if(!openedClass || isInvalidFile(openedClass)){
 		vscode.window.showInformationMessage('Apex Class or Trigger not found');
 		return;
 	}
 
+  cleanCoverage(openedClass);
+
   let className = getCurrentClassName(openedClass);
   let currentOrg = getCurrentOrg();
+
+  if(!currentOrg){
+    vscode.window.showInformationMessage('sfdx-config.json not found');
+		return;
+  }
 
   if(currentOrg != status.defaultOrg || !status.mapNameClass_MapMethodName_Coverage.has(className) || !status.userName){
     await vscode.window.withProgress(
       {
-        title: 'Get Code Coverage : ' + className,
+        title: 'Apex Get Coverage - ' + className,
         location: vscode.ProgressLocation.Notification
       },
       () => runAsync(status, currentOrg, className)
     );
   }
 
-  const REFRESH_DATA = 'Refresh Data';
-  const TOTAL_COVERAGE = 'Total Coverage';
-  let options = [REFRESH_DATA];
-  let recordTotalCoverage = status.mapNameClass_TotalCoverage.get(className)[0];
-  let methodCoverage = (recordTotalCoverage.NumLinesCovered / (recordTotalCoverage.NumLinesCovered + recordTotalCoverage.NumLinesUncovered)) * 100;
-  options.push(TOTAL_COVERAGE + ' - ' + methodCoverage.toFixed(2) + '%');
-
-  let mapMethodName_Coverage = status.mapNameClass_MapMethodName_Coverage.get(className);
-
-  for (const entry of mapMethodName_Coverage.entries()) {
-    let methodCoverage = (entry[1].NumLinesCovered / (entry[1].NumLinesCovered + entry[1].NumLinesUncovered)) * 100;
-    options.push(entry[0] + ' - ' + methodCoverage.toFixed(2) + '%');
+  if(!status.mapNameClass_MapMethodName_Coverage.has(className)){
+    vscode.window.showInformationMessage('No Coverage found for this Class/Trigger. Run Test Class!');
+    return;
   }
+
+  let options = getOptions(status, className);
 
   vscode.window.showQuickPick(options).then(selection => {
     if (!selection) {
@@ -53,15 +55,16 @@ export async function run(status : Stato) {
       status.mapNameClass_TotalCoverage.delete(className);
       vscode.commands.executeCommand('extension.getCoverage');
     }else if(selected == TOTAL_COVERAGE){
-      highlightCoverage(recordTotalCoverage.Coverage, openedClass);
+      highlightCoverage(status.mapNameClass_TotalCoverage.get(className)[0].Coverage, openedClass);
     }else{
-      highlightCoverage(mapMethodName_Coverage.get(selected).Coverage, openedClass);
+      highlightCoverage(status.mapNameClass_MapMethodName_Coverage.get(className).get(selected).Coverage, openedClass);
     }
   });
 }
 
 async function runAsync(status: Stato, currentOrg :String, className : String){
   if(currentOrg != status.defaultOrg || !status.userName){
+    status = new Stato(currentOrg);
     let response = await exec('sfdx force:auth:list --json');
     let jsonResponse = JSON.parse(response.stdout);
     for(const accessOrg of jsonResponse.result){
@@ -84,10 +87,26 @@ async function runAsync(status: Stato, currentOrg :String, className : String){
     });
 
     status.mapNameClass_MapMethodName_Coverage.set(className, mapMethodName_Coverage);
-  }
-  query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered, Coverage FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + status.userName + '" --json';
-  response = await exec(query);
-  records = JSON.parse(response.stdout)["result"].records;
-  status.mapNameClass_TotalCoverage.set(className, records);
 
+    query = 'sfdx force:data:soql:query -q "SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered, Coverage FROM ApexCodeCoverageAggregate WHERE ApexClassOrTrigger.Name = \'' + className + '\'" -t -u ' + '"' + status.userName + '" --json';
+    response = await exec(query);
+    records = JSON.parse(response.stdout)["result"].records;
+    status.mapNameClass_TotalCoverage.set(className, records);
+  }
+}
+
+function getOptions(status : Stato, className : String){
+  let options = [REFRESH_DATA];
+  let recordTotalCoverage = status.mapNameClass_TotalCoverage.get(className)[0];
+  let methodCoverage = (recordTotalCoverage.NumLinesCovered / (recordTotalCoverage.NumLinesCovered + recordTotalCoverage.NumLinesUncovered)) * 100;
+  options.push(TOTAL_COVERAGE + ' - ' + methodCoverage.toFixed(2) + '%');
+
+  let mapMethodName_Coverage = status.mapNameClass_MapMethodName_Coverage.get(className);
+
+  for (const entry of mapMethodName_Coverage.entries()) {
+    let methodCoverage = (entry[1].NumLinesCovered / (entry[1].NumLinesCovered + entry[1].NumLinesUncovered)) * 100;
+    options.push(entry[0] + ' - ' + methodCoverage.toFixed(2) + '%');
+  }
+
+  return options;
 }

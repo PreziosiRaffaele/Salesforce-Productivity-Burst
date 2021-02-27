@@ -3,15 +3,20 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import {coveredLinesDecorationType, uncoveredLinesDecorationType} from './decorations';
 
 /**
  * @returns the connected Sf Org Name
  */
 export function getCurrentOrg() : String {
   const sfdxConfigPath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'/.sfdx','sfdx-config.json');
-  const bodyConfig = fs.readFileSync(sfdxConfigPath, 'utf-8');
-  const jsonConfig = JSON.parse(bodyConfig);
-  return jsonConfig["defaultusername"];
+  try{
+    const bodyConfig = fs.readFileSync(sfdxConfigPath, 'utf-8');
+    const jsonConfig = JSON.parse(bodyConfig);
+    return jsonConfig["defaultusername"];
+  }catch(error){
+    return null;
+  }
 }
 
 /**
@@ -38,7 +43,10 @@ export function isInvalidFile(openedClass) : Boolean{
   }
 }
 
-export function getRange(lines){
+/**
+ * @returns The array of VsCode.range
+ */
+function getRange(lines) : Array<vscode.Range>{
   let coveredRange = [];
   const Max_VALUE = 1000;
   for(const line of lines){
@@ -50,26 +58,15 @@ export function getRange(lines){
 
 export function highlightCoverage(coverageObject, openedClass){
 
-  const lime = (opacity: number): string => `rgba(45, 121, 11, ${opacity})`;
-	const red = (opacity: number): string => `rgba(253, 72, 73, ${opacity})`;
-
-	let coveredLinesDecorationType = vscode.window.createTextEditorDecorationType(
-	{
-		backgroundColor: lime(0.3),
-		borderRadius: '.2em',
-		overviewRulerColor: lime(0.3)
-	});
-
-	let uncoveredLinesDecorationType = vscode.window.createTextEditorDecorationType(
-	{
-		backgroundColor: red(0.3),
-		borderRadius: '.2em',
-		overviewRulerColor: red(0.3)
-	});
-
   let coveredRange = getRange(coverageObject.coveredLines);
   let uncoveredRange = getRange(coverageObject.uncoveredLines);
 
   openedClass.setDecorations(coveredLinesDecorationType, coveredRange);
   openedClass.setDecorations(uncoveredLinesDecorationType, uncoveredRange);
 }
+
+export function cleanCoverage(openedClass){
+  openedClass.setDecorations(coveredLinesDecorationType, []);
+  openedClass.setDecorations(uncoveredLinesDecorationType, []);
+}
+

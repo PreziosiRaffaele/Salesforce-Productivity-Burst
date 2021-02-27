@@ -1,5 +1,3 @@
-import { exec } from 'child_process';
-
 export class Stato {
   public defaultOrg : String;
   public userName : String;
