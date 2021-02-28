@@ -1,4 +1,4 @@
-<h2>Apex Get Coverage</h2>
+<h2>Salesforce Apex Get Coverage</h2>
 
 <h3>Get Total Coverage and single methods test coverage of your Apex Classes/Triggers as in Salesforce Developer Console.</h3>
 

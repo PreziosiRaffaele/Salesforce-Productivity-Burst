@@ -1,6 +1,6 @@
 {
     "name": "apexgetcoverage",
-    "displayName": "Apex Get Coverage",
+    "displayName": "Salesforce Apex Get Coverage",
     "description": "Get Coverage of your Apex Classes/Triggers. Highlight covered/uncovered lines.",
 	"icon": "icon.png",
     "version": "1.0.0",

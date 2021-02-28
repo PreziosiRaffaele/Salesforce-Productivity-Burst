@@ -7,8 +7,7 @@ import * as vscode from 'vscode';
 const REFRESH_DATA = 'Refresh Data';
 const TOTAL_COVERAGE = 'Total Coverage';
 
-
-export async function run(status : Stato) {
+export async function run() {
 
   const openedClass = vscode.window.activeTextEditor;
   if(!openedClass || isInvalidFile(openedClass)){
@@ -26,10 +25,12 @@ export async function run(status : Stato) {
 		return;
   }
 
+  let status = Stato.getInstance(currentOrg);
+
   if(currentOrg != status.defaultOrg || !status.mapNameClass_MapMethodName_Coverage.has(className) || !status.userName){
     await vscode.window.withProgress(
       {
-        title: 'Apex Get Coverage - ' + className,
+        title: 'SFDX: Apex Get Coverage - ' + className,
         location: vscode.ProgressLocation.Notification
       },
       () => runAsync(status, currentOrg, className)
@@ -64,7 +65,7 @@ export async function run(status : Stato) {
 
 async function runAsync(status: Stato, currentOrg :String, className : String){
   if(currentOrg != status.defaultOrg || !status.userName){
-    status = new Stato(currentOrg);
+    Stato.reset(currentOrg);
     let response = await exec('sfdx force:auth:list --json');
     let jsonResponse = JSON.parse(response.stdout);
     for(const accessOrg of jsonResponse.result){
