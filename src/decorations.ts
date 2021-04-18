@@ -1,20 +1,25 @@
-import { window } from 'vscode';
+import * as vscode from 'vscode';
 
-const lime = (opacity: number): string => `rgba(45, 121, 11, ${opacity})`;
-const red = (opacity: number): string => `rgba(253, 72, 73, ${opacity})`;
+export function getDecorationForCoveredLines(){
+  let opacity = Number(vscode.workspace.getConfiguration().get('apexGetCoverage.Brightness'))/100;
+  let color = `rgba(` + vscode.workspace.getConfiguration().get('apexGetCoverage.CoveredLinesColor') + `, ${opacity})`;
+  return vscode.window.createTextEditorDecorationType(
+    {
+      backgroundColor: color,
+      borderRadius: '.2em',
+      overviewRulerColor: color
+    }
+  );
+}
 
-export const coveredLinesDecorationType = window.createTextEditorDecorationType(
-  {
-    backgroundColor: lime(0.3),
-    borderRadius: '.2em',
-    overviewRulerColor: lime(0.3)
-  }
-);
-
-export const uncoveredLinesDecorationType = window.createTextEditorDecorationType(
-  {
-    backgroundColor: red(0.3),
-    borderRadius: '.2em',
-    overviewRulerColor: red(0.3)
-  }
-);
+export function getDecorationForUncoveredLines(){
+  let opacity = Number(vscode.workspace.getConfiguration().get('apexGetCoverage.Brightness'))/100;
+  let color = `rgba(` + vscode.workspace.getConfiguration().get('apexGetCoverage.UncoveredLinesColor') + `, ${opacity})`;
+  return vscode.window.createTextEditorDecorationType(
+    {
+      backgroundColor: color,
+      borderRadius: '.2em',
+      overviewRulerColor: color
+    }
+  );
+}

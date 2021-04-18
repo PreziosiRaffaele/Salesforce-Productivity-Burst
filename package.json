@@ -25,6 +25,32 @@
                 "command": "extension.getCoverage",
                 "title": "SFDX: Apex Get Coverage"
             }
+        ],
+        "configuration": [
+          {
+            "title": "Salesforce Apex Get Coverage",
+            "properties": {
+              "apexGetCoverage.Brightness": {
+                "type": "number",
+                "minimum": 10,
+                "maximum": 100,
+                "default": 30,
+                "description": "Set Decoration Brightness for covered/uncovered lines"
+              },
+              "apexGetCoverage.CoveredLinesColor": {
+                "type": "string",
+                "default": "45,121,11",
+                "pattern": "^(\\d{1,2}|[1][0-9][0-9]|[2][0-5][0-5]),(\\d{1,2}|[1][0-9][0-9]|[2][0-5][0-5]),(\\d{1,2}|[1][0-9][0-9]|[2][0-5][0-5])$",
+                "description": "RGB Color. Default value 45,121,11"
+              },
+              "apexGetCoverage.UncoveredLinesColor": {
+                "type": "string",
+                "default": "253,72,73",
+                "pattern": "^(\\d{1,2}|[1][0-9][0-9]|[2][0-5][0-5]),(\\d{1,2}|[1][0-9][0-9]|[2][0-5][0-5]),(\\d{1,2}|[1][0-9][0-9]|[2][0-5][0-5])$",
+                "description": "RGB Color. Default value 253,72,73"
+              }
+            }
+          }
         ]
     },
     "scripts": {

@@ -3,7 +3,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {coveredLinesDecorationType, uncoveredLinesDecorationType} from './decorations';
+import {getDecorationForCoveredLines, getDecorationForUncoveredLines} from './decorations';
+let decorationTypeCoveredLine;
+let decorationTypeUncoveredLine;
+
 
 /**
  * @returns the connected Sf Org Name
@@ -60,13 +63,19 @@ export function highlightCoverage(coverageObject, openedClass){
 
   let coveredRange = getRange(coverageObject.coveredLines);
   let uncoveredRange = getRange(coverageObject.uncoveredLines);
+  decorationTypeCoveredLine = getDecorationForCoveredLines();
+  decorationTypeUncoveredLine = getDecorationForUncoveredLines();
 
-  openedClass.setDecorations(coveredLinesDecorationType, coveredRange);
-  openedClass.setDecorations(uncoveredLinesDecorationType, uncoveredRange);
+  openedClass.setDecorations(decorationTypeCoveredLine, coveredRange);
+  openedClass.setDecorations(decorationTypeUncoveredLine, uncoveredRange);
 }
 
 export function cleanCoverage(openedClass){
-  openedClass.setDecorations(coveredLinesDecorationType, []);
-  openedClass.setDecorations(uncoveredLinesDecorationType, []);
+  if(decorationTypeCoveredLine != null && decorationTypeUncoveredLine != null){
+    openedClass.setDecorations(decorationTypeCoveredLine, []);
+    openedClass.setDecorations(decorationTypeUncoveredLine, []);
+  }
 }
+
+
 
