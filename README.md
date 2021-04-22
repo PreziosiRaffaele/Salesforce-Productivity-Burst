@@ -11,3 +11,8 @@
 <em>Tip: disable retrieve-test-code-coverage from settings to speed up your test.</em>
 
 ![Recording of Apex Get Coverage](https://github.com/PreziosiRaffaele/ApexGetCoverage/blob/main/demo.gif?raw=true)
+
+</br>
+<h3>Change the colors of highlighted lines from vscode preferences to fit perfectly your vscode theme:<h3>
+
+![Preferences Apex Get Coverage](https://github.com/PreziosiRaffaele/ApexGetCoverage/blob/main/preferences.PNG?raw=true)
