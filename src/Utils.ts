@@ -1,26 +1,14 @@
-'use strict';
-
-import * as fs from 'fs';
+const fs = require('fs')
+const execSync = require('child_process').execSync;
+const util = require('util');
+const execAsync = util.promisify(require('child_process').exec);
+const writeFile = util.promisify(fs.writeFile);
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {getDecorationForCoveredLines, getDecorationForUncoveredLines} from './decorations';
+import {getDecorationForCoveredLines, getDecorationForUncoveredLines} from './Decorations';
+import { Connection } from './Connection';
 let decorationTypeCoveredLine;
 let decorationTypeUncoveredLine;
-
-
-/**
- * @returns the connected Sf Org Name
- */
-export function getCurrentOrg() : String {
-  const sfdxConfigPath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'/.sfdx','sfdx-config.json');
-  try{
-    const bodyConfig = fs.readFileSync(sfdxConfigPath, 'utf-8');
-    const jsonConfig = JSON.parse(bodyConfig);
-    return jsonConfig["defaultusername"];
-  }catch(error){
-    return null;
-  }
-}
 
 /**
  * @returns the opened Class Name
@@ -77,5 +65,25 @@ export function cleanCoverage(openedClass){
   }
 }
 
+export function query(soql){
+  let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getInstance().userName}" --json`;
+  let queryResult = execSync(query);
+  return JSON.parse(queryResult.toString())["result"].records;
+}
 
+export async function asyncQuery(soql){
+  let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getInstance().userName}" --json`;
+  let queryResult = await execAsync(query);
+  return JSON.parse(queryResult.stdout)["result"].records;
+}
 
+export async function deleteRecords(SObjects){
+  if(!SObjects || SObjects.length === 0) return;
+  const objType = SObjects[0].attributes.type;
+  const setIds = new Set(SObjects.map(object => object.Id));
+  let csv = 'Id' + '\n';
+  setIds.forEach(id => csv += id + '\n');
+  const filePath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'tempDelete.csv');
+  await writeFile(filePath, csv);
+  await execAsync(`sfdx force:data:bulk:delete -s ${objType} -f ${filePath} -u "${Connection.getInstance().userName}"`);
+}

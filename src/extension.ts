@@ -1,11 +1,16 @@
 'use strict';
 import * as vscode from 'vscode';
-import { run } from './GetCoverageHandler';
+import { getCoverage } from './GetCoverageHandler';
+import { enableDebugLog } from './DebugLogHandler';
 
 export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
-    run();
+    getCoverage();
+  }));
+
+  context.subscriptions.push(vscode.commands.registerCommand('extension.TurnOnApexDebug', () => {
+    enableDebugLog();
   }));
 }
 

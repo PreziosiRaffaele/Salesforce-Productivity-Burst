@@ -16,7 +16,8 @@
 		"Salesforce", "Apex", "Test","sfdx","salesforcedx"
 	],
     "activationEvents": [
-        "onCommand:extension.getCoverage"
+        "onCommand:extension.getCoverage",
+        "onCommand:extension.TurnOnApexDebug"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -24,6 +25,10 @@
             {
                 "command": "extension.getCoverage",
                 "title": "SFDX: Apex Get Coverage"
+            },
+            {
+              "command": "extension.TurnOnApexDebug",
+              "title": "SFDX: Turn on Apex Debug Log"
             }
         ],
         "configuration": [
