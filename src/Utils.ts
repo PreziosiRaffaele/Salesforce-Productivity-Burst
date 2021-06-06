@@ -87,3 +87,16 @@ export async function deleteRecords(SObjects){
   await writeFile(filePath, csv);
   await execAsync(`sfdx force:data:bulk:delete -s ${objType} -f ${filePath} -u "${Connection.getInstance().userName}"`);
 }
+
+export async function deleteRecord(SObject){
+  const objType = SObject.attributes.type;
+  await execAsync(`sfdx force:data:record:delete -t -s${objType} -i ${SObject.Id} -u "${Connection.getInstance().userName}"`);
+}
+
+export async function createRecord(objType, SObject){
+  let values = '';
+  for (let key in SObject) {
+    values += (key + '=' + SObject[key] + ' ');
+  }
+  await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${Connection.getInstance().userName}"`);
+}
