@@ -10,12 +10,12 @@ export async function enableDebugLog() {
       title: 'SFDX: Create Trace Flag',
       location: vscode.ProgressLocation.Notification
     },
-    () => createDebugLog(debuglevels.find(debuglevel => debuglevel.DeveloperName == debugLevelSelected))
+    () => createTraceFlag(debuglevels.find(debuglevel => debuglevel.DeveloperName == debugLevelSelected))
   );
 }
 
-async function createDebugLog(debugLevel){
-  const LOG_TIMER_LENGTH_MINUTES = 30;
+async function createTraceFlag(debugLevel){
+  const LOG_TIMER_LENGTH_MINUTES = 60;
   const MILLISECONDS_PER_MINUTE = 60000;
   const user = await asyncQuery(`SELECT Id FROM User WHERE Username = '${Connection.getInstance().userName}' LIMIT 1`);
   const userId = user[0].Id;
@@ -23,14 +23,14 @@ async function createDebugLog(debugLevel){
   if(previousTraceFlag.length === 1){
     await deleteRecord(previousTraceFlag[0]);
   }
+  let startDate = new Date(Date.now());
   let expirationDate = new Date(
     Date.now() + LOG_TIMER_LENGTH_MINUTES * MILLISECONDS_PER_MINUTE
   );
-
   const newTraceFlag = {
     TracedEntityId : userId,
     DebugLevelId : debugLevel.Id,
-    StartDate : '',
+    StartDate : startDate.toISOString(),
     logtype: 'developer_log',
     ExpirationDate : expirationDate.toISOString()
   }
