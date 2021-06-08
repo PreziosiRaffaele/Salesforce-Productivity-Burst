@@ -4,12 +4,6 @@ import { showTraceFlagStatus } from './StatusBar';
 import * as vscode from 'vscode';
 
 export async function enableDebugLog() {
-  try{
-    Connection.getConnection();
-  }catch(error){
-    vscode.window.showInformationMessage(error);
-    return;
-  }
   const debuglevels = query('SELECT Id,DeveloperName FROM Debuglevel');
   const debugLevelSelected = await vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog.DeveloperName),{placeHolder : 'Select Debug Level'})
   if(debugLevelSelected){
