@@ -18,7 +18,7 @@ export async function getCoverage() {
   cleanCoverage(openedClass);
 
   let className = getCurrentClassName(openedClass);
-  let connection = Connection.getInstance();
+  let connection = Connection.getConnection();
 
   if(!connection.mapNameClass_MapMethodName_Coverage.has(className)){
     await vscode.window.withProgress(
@@ -36,24 +36,20 @@ export async function getCoverage() {
   }
 
   let options = getOptions(connection, className);
-
-  vscode.window.showQuickPick(options).then(selection => {
-    if (!selection) {
-      return;
-    }
-
-    let selected = selection.split(' - ')[0].trim();
-
-    if(selection == REFRESH_DATA){
-      connection.mapNameClass_MapMethodName_Coverage.delete(className);
-      connection.mapNameClass_TotalCoverage.delete(className);
-      vscode.commands.executeCommand('extension.getCoverage');
-    }else if(selected == TOTAL_COVERAGE){
-      highlightCoverage(connection.mapNameClass_TotalCoverage.get(className)[0].Coverage, openedClass);
-    }else{
-      highlightCoverage(connection.mapNameClass_MapMethodName_Coverage.get(className).get(selected).Coverage, openedClass);
-    }
-  });
+  let selection = await vscode.window.showQuickPick(options,{placeHolder : 'Select Test Method'});
+  if (!selection) {
+    return;
+  }
+  let selected = selection.split(' - ')[0].trim();
+  if(selection == REFRESH_DATA){
+    connection.mapNameClass_MapMethodName_Coverage.delete(className);
+    connection.mapNameClass_TotalCoverage.delete(className);
+    vscode.commands.executeCommand('extension.getCoverage');
+  }else if(selected == TOTAL_COVERAGE){
+    highlightCoverage(connection.mapNameClass_TotalCoverage.get(className)[0].Coverage, openedClass);
+  }else{
+    highlightCoverage(connection.mapNameClass_MapMethodName_Coverage.get(className).get(selected).Coverage, openedClass);
+  }
 }
 
 async function runAsync(connection, className){
@@ -72,7 +68,7 @@ async function runAsync(connection, className){
                               + 'FROM ApexCodeCoverageAggregate '
                               + 'WHERE ApexClassOrTrigger.Name = \'' + className + '\'');
 
-    connection.mapNameClass_TotalCoverage.set(className, records);
+                              connection.mapNameClass_TotalCoverage.set(className, records);
   }
 }
 

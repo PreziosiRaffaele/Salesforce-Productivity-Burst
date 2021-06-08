@@ -1,40 +1,57 @@
-
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { query } from './Utils';
+import { resetStatusBar } from './StatusBar';
 const execSync = require('child_process').execSync;
-
 export class Connection {
-  public orgName;
-  public userName;
+  private orgName;
+  private userName;
+  private userId;
   public mapNameClass_MapMethodName_Coverage;
 	public mapNameClass_TotalCoverage;
   private static instance;
 
-  private constructor(orgName){
+  private constructor(orgName) {
     this.orgName = orgName;
-    this.userName = getUsername(orgName);
+    this.userName = setUsername(orgName);
+    resetStatusBar();
     this.mapNameClass_MapMethodName_Coverage = new Map();
     this.mapNameClass_TotalCoverage = new Map();
   }
 
-  static getInstance(){
-    let currentOrg = getCurrentOrg();
-    if(!this.instance || (currentOrg != this.instance.orgName)){
-      this.instance = new Connection(currentOrg);
+  public static getConnection() {
+    let connectedOrg = getConnectedOrg();
+    if(!this.instance || (connectedOrg != this.instance.getOrgName())){
+      this.instance = new Connection(connectedOrg);
     }
     return this.instance;
   }
+
+  public getUserId(){
+    if(!this.userId){
+      this.userId = query(`SELECT Id FROM User WHERE Username = '${this.userName}' LIMIT 1`)[0].Id;
+    }
+    return this.userId;
+  }
+
+  public getUsername(){
+    return this.userName;
+  }
+
+  public getOrgName(){
+    return this.orgName;
+  }
 }
 
-function getUsername(orgName){
+function setUsername(orgName) {
   let response = execSync('sfdx force:auth:list --json');
   let accessOrgs = JSON.parse(response.toString())["result"];
   let accessOrg = accessOrgs.find(accessOrg => accessOrg.alias == orgName)
   return accessOrg.username;
 }
 
-function getCurrentOrg() {
+function getConnectedOrg() {
   try{
     const sfdxConfigPath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'/.sfdx','sfdx-config.json');
     const bodyConfig = fs.readFileSync(sfdxConfigPath, 'utf-8');

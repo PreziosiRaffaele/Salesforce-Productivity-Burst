@@ -66,13 +66,13 @@ export function cleanCoverage(openedClass){
 }
 
 export function query(soql){
-  let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getInstance().userName}" --json`;
+  let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getConnection().getUsername()}" --json`;
   let queryResult = execSync(query);
   return JSON.parse(queryResult.toString())["result"].records;
 }
 
 export async function asyncQuery(soql){
-  let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getInstance().userName}" --json`;
+  let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getConnection().getUsername()}" --json`;
   let queryResult = await execAsync(query);
   return JSON.parse(queryResult.stdout)["result"].records;
 }
@@ -85,12 +85,12 @@ export async function deleteRecords(SObjects){
   setIds.forEach(id => csv += id + '\n');
   const filePath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'tempDelete.csv');
   await writeFile(filePath, csv);
-  await execAsync(`sfdx force:data:bulk:delete -s ${objType} -f ${filePath} -u "${Connection.getInstance().userName}"`);
+  await execAsync(`sfdx force:data:bulk:delete -s ${objType} -f ${filePath} -u "${Connection.getConnection().getUsername()}"`);
 }
 
 export async function deleteRecord(SObject){
   const objType = SObject.attributes.type;
-  await execAsync(`sfdx force:data:record:delete -t -s${objType} -i ${SObject.Id} -u "${Connection.getInstance().userName}"`);
+  await execAsync(`sfdx force:data:record:delete -t -s${objType} -i ${SObject.Id} -u "${Connection.getConnection().getUsername()}"`);
 }
 
 export async function createRecord(objType, SObject){
@@ -98,5 +98,5 @@ export async function createRecord(objType, SObject){
   for (let key in SObject) {
     values += (key + '=' + SObject[key] + ' ');
   }
-  await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${Connection.getInstance().userName}"`);
+  await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
 }
