@@ -100,3 +100,20 @@ export async function createRecord(objType, SObject){
   }
   await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
 }
+
+export async function upsertRecord(objType, SObject){
+  let values = '';
+  let id;
+  for (let key in SObject) {
+    if(key != "Id"){
+      values += (key + '=' + SObject[key] + ' ');
+    }else{
+      id = SObject[key];
+    }
+  }
+  if(!id){
+    await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
+  }else{
+    await execAsync(`sfdx force:data:record:update -t -s${objType} -i ${id} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
+  }
+}

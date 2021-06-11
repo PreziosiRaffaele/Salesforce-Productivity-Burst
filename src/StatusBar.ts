@@ -5,7 +5,9 @@ export function showTraceFlagStatus(traceFlag){
   traceFlagStatus.text = 'Trace Flag until : ' + new Date(traceFlag.ExpirationDate).toLocaleTimeString();
   traceFlagStatus.show();
 }
-
-export function resetStatusBar(){
+export function hideTraceFlagStatus(){
   traceFlagStatus.hide();
+}
+export function resetStatusBar(){
+  hideTraceFlagStatus();
 }

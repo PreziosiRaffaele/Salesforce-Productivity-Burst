@@ -1,7 +1,7 @@
 'use strict';
 import * as vscode from 'vscode';
 import { getCoverage } from './GetCoverageHandler';
-import { enableDebugLog } from './DebugLogHandler';
+import { enableDebugLog, disableDebugLog } from './DebugLogHandler';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -9,8 +9,12 @@ export function activate(context: vscode.ExtensionContext) {
     getCoverage();
   }));
 
-  context.subscriptions.push(vscode.commands.registerCommand('extension.TurnOnApexDebug', () => {
+  context.subscriptions.push(vscode.commands.registerCommand('extension.createTraceFlag', () => {
     enableDebugLog();
+  }));
+
+  context.subscriptions.push(vscode.commands.registerCommand('extension.deleteActiveTraceFlag', () => {
+    disableDebugLog();
   }));
 }
 

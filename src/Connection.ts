@@ -8,6 +8,7 @@ export class Connection {
   private orgName;
   private userName;
   private userId;
+  private debugLevels;
   public mapNameClass_MapMethodName_Coverage;
 	public mapNameClass_TotalCoverage;
   private static instance;
@@ -33,6 +34,13 @@ export class Connection {
       this.userId = query(`SELECT Id FROM User WHERE Username = '${this.userName}' LIMIT 1`)[0].Id;
     }
     return this.userId;
+  }
+
+  public getDebugLevels(){
+    if(!this.debugLevels){
+      this.debugLevels = query('SELECT Id,DeveloperName FROM Debuglevel');
+    }
+    return this.debugLevels;
   }
 
   public getUsername(){
