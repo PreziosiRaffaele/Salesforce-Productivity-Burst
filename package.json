@@ -2,8 +2,8 @@
     "name": "apexgetcoverage",
     "displayName": "Salesforce Apex Get Coverage",
     "description": "Get Coverage of your Apex Classes/Triggers. Highlight covered/uncovered lines.",
-	"icon": "icon.png",
-    "version": "2.2.0",
+	"icon": "newIcon.png",
+    "version": "2.3.0",
     "publisher": "RaffaelePreziosi",
 	"repository": { "type": "git", "url": "https://github.com/PreziosiRaffaele/ApexGetCoverage.git"},
     "engines": {
