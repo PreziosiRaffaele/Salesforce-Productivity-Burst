@@ -1,5 +1,5 @@
 # Salesforce Apex Get Coverage
-
+*(Contact me on [my Linkedin](https://www.linkedin.com/in/raffaele-preziosi-5835ba186/) for any ideas and suggestions)*
 ## Get Total Coverage and single methods test coverage of your Apex Classes/Triggers as in Salesforce Developer Console.
 
 - **Instructions:**
