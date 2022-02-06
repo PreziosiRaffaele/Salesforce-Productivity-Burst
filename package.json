@@ -18,7 +18,8 @@
     "activationEvents": [
         "onCommand:extension.getCoverage",
         "onCommand:extension.createTraceFlag",
-        "onCommand:extension.deleteActiveTraceFlag"
+        "onCommand:extension.deleteActiveTraceFlag",
+        "onCommand:extension.deleteApexLogs"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -34,6 +35,10 @@
             {
               "command": "extension.deleteActiveTraceFlag",
               "title": "SFDX: Delete Active Trace Flag"
+            },
+            {
+              "command": "extension.deleteApexLogs",
+              "title": "SFDX: Delete Apex Logs"
             }
         ],
         "configuration": [

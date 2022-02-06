@@ -1,4 +1,4 @@
-import {asyncQuery,deleteRecord,createRecord} from './Utils';
+import {asyncQuery,deleteRecord,createRecord,deleteRecords} from './Utils';
 import { Connection } from './Connection';
 import { showTraceFlagStatus, hideTraceFlagStatus} from './StatusBar';
 import * as vscode from 'vscode';
@@ -61,4 +61,19 @@ async function getActiveTraceFlag(){
   }else{
     return null;
   }
+}
+
+export async function deleteApexLogs(){
+  await vscode.window.withProgress(
+    {
+      title: 'Delete Apex Logs',
+      location: vscode.ProgressLocation.Notification
+    },
+    () => deleteLogs()
+  );
+}
+
+async function deleteLogs(){
+  let apexLogs = await asyncQuery(`SELECT Id FROM ApexLog ORDER BY LastModifiedDate ASC LIMIT 50000`);
+  await deleteRecords(apexLogs);
 }
