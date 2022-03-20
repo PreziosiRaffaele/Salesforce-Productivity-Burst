@@ -3,7 +3,7 @@
     "displayName": "Salesforce Apex Get Coverage",
     "description": "Get Coverage of your Apex Classes/Triggers. Highlight covered/uncovered lines.",
 	"icon": "newIcon.jpg",
-    "version": "2.3.0",
+    "version": "3.0.0",
     "publisher": "RaffaelePreziosi",
 	"repository": { "type": "git", "url": "https://github.com/PreziosiRaffaele/ApexGetCoverage.git"},
     "engines": {
@@ -19,7 +19,8 @@
         "onCommand:extension.getCoverage",
         "onCommand:extension.createTraceFlag",
         "onCommand:extension.deleteActiveTraceFlag",
-        "onCommand:extension.deleteApexLogs"
+        "onCommand:extension.deleteApexLogs",
+        "onCommand:extension.getClassInfo"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -39,6 +40,10 @@
             {
               "command": "extension.deleteApexLogs",
               "title": "SFDX: Delete Apex Logs"
+            },
+            {
+              "command": "extension.getClassInfo",
+              "title": "SFDX: Get Class Info"
             }
         ],
         "configuration": [

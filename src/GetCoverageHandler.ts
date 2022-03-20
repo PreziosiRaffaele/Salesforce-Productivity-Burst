@@ -17,7 +17,7 @@ export async function getCoverage() {
 
   cleanCoverage(openedClass);
 
-  let className = getCurrentClassName(openedClass);
+  let className = getCurrentClassName();
   let connection = Connection.getConnection();
 
   if(!connection.mapNameClass_MapMethodName_Coverage.has(className)){

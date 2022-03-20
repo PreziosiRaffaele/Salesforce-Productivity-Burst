@@ -13,7 +13,11 @@ let decorationTypeUncoveredLine;
 /**
  * @returns the opened Class Name
  */
-export function getCurrentClassName(openedClass) : String {
+export function getCurrentClassName(){
+  const openedClass = vscode.window.activeTextEditor;
+  if(!openedClass || isInvalidFile(openedClass)){
+    throw 'Apex Class/Trigger not opened!';
+	}
   const pathClass = openedClass.document.fileName;
   return pathClass.substring(pathClass.lastIndexOf("\\")+1,pathClass.lastIndexOf("."));
 }
