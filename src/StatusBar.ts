@@ -1,13 +1,21 @@
 import * as vscode from 'vscode';
-const traceFlagStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 40);
+const traceFlagStatusMap = {
+  'User' : vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 40),
+  'Automated Process' : vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 41),
+  'Platform Integration User' : vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 42)
+}
 
-export function showTraceFlagStatus(traceFlag){
-  traceFlagStatus.text = 'Trace Flag until : ' + new Date(traceFlag.ExpirationDate).toLocaleTimeString();
+export function showTraceFlagStatus(tracedEntityType, expirationDate){
+  const traceFlagStatus = traceFlagStatusMap[tracedEntityType];
+  traceFlagStatus.text = `Db ${tracedEntityType} Exp. (${new Date(expirationDate).toLocaleTimeString()})`;
   traceFlagStatus.show();
 }
-export function hideTraceFlagStatus(){
+export function hideTraceFlagStatus(tracedEntityType){
+  const traceFlagStatus = traceFlagStatusMap[tracedEntityType];
   traceFlagStatus.hide();
 }
 export function resetStatusBar(){
-  hideTraceFlagStatus();
+  for (let tracedEntityType in traceFlagStatusMap){
+    hideTraceFlagStatus(tracedEntityType);
+  }
 }

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { query } from './Utils';
+import { query,asyncQuery } from './Utils';
 import { resetStatusBar } from './StatusBar';
 const execSync = require('child_process').execSync;
 export class Connection {
@@ -9,6 +9,8 @@ export class Connection {
   private userName;
   private userId;
   private debugLevels;
+  private automatedProcessUserId;
+  private platformIntegrationUserId;
   public mapNameClass_MapMethodName_Coverage;
 	public mapNameClass_TotalCoverage;
   private static instance;
@@ -29,18 +31,39 @@ export class Connection {
     return this.instance;
   }
 
-  public getUserId(){
+  public async getUserId(){
     if(!this.userId){
-      this.userId = query(`SELECT Id FROM User WHERE Username = '${this.userName}' LIMIT 1`)[0].Id;
+      const user = await asyncQuery(`SELECT Id FROM User WHERE Username = '${this.userName}' LIMIT 1`);
+      this.userId = user[0].Id
     }
     return this.userId;
   }
 
-  public getDebugLevels(){
-    if(!this.debugLevels){
-      this.debugLevels = query('SELECT Id,DeveloperName FROM Debuglevel');
+  public async getAutomatedProcessUserId(){
+    if(!this.automatedProcessUserId){
+      const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Automated Process' LIMIT 1`);
+      this.automatedProcessUserId = user[0].Id
     }
-    return this.debugLevels;
+    return this.automatedProcessUserId;
+  }
+
+  public async getPlatformIntegrationUserId(){
+    if(!this.platformIntegrationUserId){
+      const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Platform Integration User' LIMIT 1`);
+      this.platformIntegrationUserId = user[0].Id
+    }
+    return this.platformIntegrationUserId;
+  }
+
+  public async getDebugLevels(){
+    if(!this.debugLevels){
+      this.debugLevels = await asyncQuery('SELECT Id,DeveloperName FROM Debuglevel');
+    }
+    if(this.debugLevels.length > 0){
+      return this.debugLevels;
+    }else{
+      throw 'Retrivered Debug Levels failed';
+    }
   }
 
   public getUsername(){

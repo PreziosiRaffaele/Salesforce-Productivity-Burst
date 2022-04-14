@@ -22,8 +22,9 @@ async function getClassInfo(){
   const classInfo = await asyncQuery( 'SELECT Name, CreatedBy.Name,LastModifiedBy.Name, FORMAT(CreatedDate), FORMAT(LastModifiedDate) '
                           + 'FROM ApexClass '
                           + 'WHERE Name = \'' + className + '\'');
-  if(classInfo.size == 0){
+  if(classInfo.length > 0){
+    return classInfo;
+  }else{
     throw 'Apex Class/Trigger not founded'
   }
-  return classInfo;
 }

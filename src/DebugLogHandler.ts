@@ -4,63 +4,96 @@ import { showTraceFlagStatus, hideTraceFlagStatus} from './StatusBar';
 import * as vscode from 'vscode';
 const LOG_TIMER_LENGTH_MINUTES = 60;
 const MILLISECONDS_PER_MINUTE = 60000;
+const TRACED_ENTITY_TYPES = ['User', 'Automated Process', 'Platform Integration User'];
 
 export async function enableDebugLog() {
-  const debuglevels = Connection.getConnection().getDebugLevels();
-  const debugLevelSelected = await vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog.DeveloperName),{placeHolder : 'Select Debug Level'})
-  if(debugLevelSelected){
+  try{
+    const tracedEntityType = await vscode.window.showQuickPick(TRACED_ENTITY_TYPES, {placeHolder : 'Select Traced Entity Type'})
+    let debuglevels = [];
+    debuglevels = await vscode.window.withProgress(
+      {
+        title: 'SFDX: Get Debug Levels',
+        location: vscode.ProgressLocation.Notification
+      },
+      () => Connection.getConnection().getDebugLevels()
+    );
+
+    const debugLevelSelected = await vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog.DeveloperName),{placeHolder : 'Select Debug Level'})
+
     await vscode.window.withProgress(
       {
         title: 'SFDX: Create Trace Flag',
         location: vscode.ProgressLocation.Notification
       },
-      () => createTraceFlag(debuglevels.find(debuglevel => debuglevel.DeveloperName == debugLevelSelected))
+      () => createTraceFlag(tracedEntityType, debuglevels.find(debuglevel => debuglevel.DeveloperName == debugLevelSelected))
     );
+  }catch(error){
+    console.log(error)
+    vscode.window.showInformationMessage(error);
   }
 }
 
-async function createTraceFlag(debugLevel){
-  await deleteActiveTraceFlag();
+async function createTraceFlag(tracedEntityType, debugLevel){
+  const TracedEntitySfId = await getTraceEntityId(tracedEntityType);
+
+  await deleteActiveTraceFlag(TracedEntitySfId);
   let expirationDate = new Date(
     Date.now() + LOG_TIMER_LENGTH_MINUTES * MILLISECONDS_PER_MINUTE
   );
+
   const newTraceFlag = {
-    TracedEntityId : Connection.getConnection().getUserId(),
+    TracedEntityId : TracedEntitySfId,
     DebugLevelId : debugLevel.Id,
     StartDate : new Date(Date.now() - 10 * MILLISECONDS_PER_MINUTE).toISOString(),
-    logtype: 'developer_log',
+    logtype: 'USER_DEBUG',
     ExpirationDate : expirationDate.toISOString()
   }
   await createRecord('TraceFlag',newTraceFlag);
-  showTraceFlagStatus(newTraceFlag);
+  showTraceFlagStatus(tracedEntityType, newTraceFlag.ExpirationDate);
 }
 
-export async function disableDebugLog(){
-  await vscode.window.withProgress(
-    {
-      title: 'SFDX: Delete Active Trace Flag',
-      location: vscode.ProgressLocation.Notification
-    },
-    () => deleteActiveTraceFlag()
-  );
-  hideTraceFlagStatus();
+async function getTraceEntityId(tracedEntityType){
+ let tracedEntityTypeId;
+  if(tracedEntityType === 'User'){
+    tracedEntityTypeId = await Connection.getConnection().getUserId();
+  }else if(tracedEntityType === 'Automated Process'){
+    tracedEntityTypeId = await Connection.getConnection().getAutomatedProcessUserId();
+  }else{
+    tracedEntityTypeId = await Connection.getConnection().getPlatformIntegrationUserId();
+  }
+  return tracedEntityTypeId;
 }
 
-export async function deleteActiveTraceFlag(){
-  const currentTraceFlag = await getActiveTraceFlag();
+export async function deleteActiveTraceFlag(TracedEntitySfId){
+  const currentTraceFlag = await getActiveTraceFlag(TracedEntitySfId);
   if(currentTraceFlag){
     await deleteRecord(currentTraceFlag);
   }
 }
 
-async function getActiveTraceFlag(){
+async function getActiveTraceFlag(TracedEntitySfId){
   const NOW = new Date(Date.now()).toISOString();
-  const traceFlags = await asyncQuery(`SELECT Id FROM TraceFlag WHERE TracedEntityId = '${Connection.getConnection().getUserId()}' AND ExpirationDate >= ${NOW} ORDER BY ExpirationDate DESC LIMIT 1`);
+  const traceFlags = await asyncQuery(`SELECT Id FROM TraceFlag WHERE TracedEntityId = '${TracedEntitySfId}' AND ExpirationDate >= ${NOW} ORDER BY ExpirationDate DESC LIMIT 1`);
   if(traceFlags || traceFlags.length > 0){
     return traceFlags[0];
   }else{
     return null;
   }
+}
+
+export async function disableDebugLog(){
+
+  const tracedEntityType = await vscode.window.showQuickPick(TRACED_ENTITY_TYPES, {placeHolder : 'Select Traced Entity Type'})
+  const TracedEntitySfId = await getTraceEntityId(tracedEntityType);
+
+  await vscode.window.withProgress(
+    {
+      title: 'SFDX: Delete Active Trace Flag',
+      location: vscode.ProgressLocation.Notification
+    },
+    () => deleteActiveTraceFlag(TracedEntitySfId)
+  );
+  hideTraceFlagStatus(tracedEntityType);
 }
 
 export async function deleteApexLogs(){
