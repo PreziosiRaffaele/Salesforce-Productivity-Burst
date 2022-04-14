@@ -19,3 +19,14 @@ export function resetStatusBar(){
     hideTraceFlagStatus(tracedEntityType);
   }
 }
+
+export function createButtonLinkSF(){
+  const openOnSfBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    200
+  );
+  openOnSfBarItem.command = 'extension.openOnSaleforce';
+  openOnSfBarItem.text =  `$(search-view-icon)`;
+  openOnSfBarItem.show();
+}
+

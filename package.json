@@ -16,34 +16,30 @@
 		"Salesforce", "Apex", "Test","sfdx","salesforcedx"
 	],
     "activationEvents": [
-        "onCommand:extension.getCoverage",
-        "onCommand:extension.createTraceFlag",
-        "onCommand:extension.deleteActiveTraceFlag",
-        "onCommand:extension.deleteApexLogs",
-        "onCommand:extension.getClassInfo"
+        "*"
     ],
     "main": "./out/extension",
     "contributes": {
         "commands": [
             {
-                "command": "extension.getCoverage",
-                "title": "SFDX: Apex Get Coverage"
+              "command": "extension.getCoverage",
+              "title": "RP: Apex Get Coverage"
             },
             {
               "command": "extension.createTraceFlag",
-              "title": "SFDX: Create Trace Flag"
+              "title": "RP: Create Trace Flag"
             },
             {
               "command": "extension.deleteActiveTraceFlag",
-              "title": "SFDX: Delete Active Trace Flag"
+              "title": "RP: Disable Active Trace Flag"
             },
             {
               "command": "extension.deleteApexLogs",
-              "title": "SFDX: Delete Apex Logs"
+              "title": "RP: Delete Apex Logs"
             },
             {
               "command": "extension.getClassInfo",
-              "title": "SFDX: Get Class Info"
+              "title": "RP: Get Class Info"
             }
         ],
         "configuration": [
