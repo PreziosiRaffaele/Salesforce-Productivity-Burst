@@ -1,9 +1,9 @@
 {
     "name": "apexgetcoverage",
-    "displayName": "Salesforce Apex Get Coverage",
-    "description": "Get Coverage of your Apex Classes/Triggers. Highlight covered/uncovered lines.",
-	"icon": "newIcon.jpg",
-    "version": "3.0.0",
+    "displayName": "Salesforce Productivity Burst",
+    "description": "Boost your productivity on Salesforce with new commands",
+	"icon": "Icon.jpg",
+    "version": "4.0.0",
     "publisher": "RaffaelePreziosi",
 	"repository": { "type": "git", "url": "https://github.com/PreziosiRaffaele/ApexGetCoverage.git"},
     "engines": {
@@ -23,23 +23,23 @@
         "commands": [
             {
               "command": "extension.getCoverage",
-              "title": "RP: Apex Get Coverage"
+              "title": "SPB: Get Coverage"
             },
             {
               "command": "extension.createTraceFlag",
-              "title": "RP: Create Trace Flag"
+              "title": "SPB: Create Trace Flag"
             },
             {
               "command": "extension.deleteActiveTraceFlag",
-              "title": "RP: Disable Active Trace Flag"
+              "title": "SPB: Disable Active Trace Flag"
             },
             {
               "command": "extension.deleteApexLogs",
-              "title": "RP: Delete Apex Logs"
+              "title": "SPB: Delete All Apex Logs"
             },
             {
               "command": "extension.getClassInfo",
-              "title": "RP: Get Class Info"
+              "title": "SPB: Get Class Info"
             }
         ],
         "configuration": [

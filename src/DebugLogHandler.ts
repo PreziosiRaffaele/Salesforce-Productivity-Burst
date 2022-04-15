@@ -12,7 +12,7 @@ export async function enableDebugLog() {
     let debuglevels = [];
     debuglevels = await vscode.window.withProgress(
       {
-        title: 'SFDX: Get Debug Levels',
+        title: 'SPB: Get Debug Levels',
         location: vscode.ProgressLocation.Notification
       },
       () => Connection.getConnection().getDebugLevels()
@@ -22,7 +22,7 @@ export async function enableDebugLog() {
 
     await vscode.window.withProgress(
       {
-        title: 'SFDX: Create Trace Flag',
+        title: 'SPB: Create Trace Flag',
         location: vscode.ProgressLocation.Notification
       },
       () => createTraceFlag(tracedEntityType, debuglevels.find(debuglevel => debuglevel.DeveloperName == debugLevelSelected))
@@ -88,7 +88,7 @@ export async function disableDebugLog(){
 
   await vscode.window.withProgress(
     {
-      title: 'SFDX: Delete Active Trace Flag',
+      title: 'SPB: Delete Active Trace Flag',
       location: vscode.ProgressLocation.Notification
     },
     () => deleteActiveTraceFlag(TracedEntitySfId)
@@ -97,13 +97,16 @@ export async function disableDebugLog(){
 }
 
 export async function deleteApexLogs(){
-  await vscode.window.withProgress(
-    {
-      title: 'Delete Apex Logs',
-      location: vscode.ProgressLocation.Notification
-    },
-    () => deleteLogs()
-  );
+  const userChoise = await vscode.window.showQuickPick(['No','Yes'], {placeHolder : 'Are you sure you want to delete all the Apex Logs from the org?'})
+  if(userChoise === 'Yes'){
+    await vscode.window.withProgress(
+      {
+        title: 'Delete Apex Logs',
+        location: vscode.ProgressLocation.Notification
+      },
+      () => deleteLogs()
+    );
+  }
 }
 
 async function deleteLogs(){

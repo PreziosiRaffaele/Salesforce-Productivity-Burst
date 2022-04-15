@@ -23,7 +23,7 @@ export async function getCoverage() {
   if(!connection.mapNameClass_MapMethodName_Coverage.has(className)){
     await vscode.window.withProgress(
       {
-        title: 'SFDX: Apex Get Coverage - ' + className,
+        title: 'SPB: Get Coverage - ' + className,
         location: vscode.ProgressLocation.Notification
       },
       () => runAsync(connection, className)

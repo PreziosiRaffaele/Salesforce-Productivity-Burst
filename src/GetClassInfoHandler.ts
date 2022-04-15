@@ -5,7 +5,7 @@ export async function runClassInfo(){
   try{
     const classInfo = await vscode.window.withProgress(
       {
-        title: 'SFDX: Get Apex Info',
+        title: 'SPB: Get Apex Info',
         location: vscode.ProgressLocation.Notification
       },
       () => getClassInfo()
