@@ -9,14 +9,16 @@ const TRACED_ENTITY_TYPES = ['User', 'Automated Process', 'Platform Integration 
 export async function enableDebugLog() {
   try{
     const tracedEntityType = await vscode.window.showQuickPick(TRACED_ENTITY_TYPES, {placeHolder : 'Select Traced Entity Type'})
-    let debuglevels = [];
-    debuglevels = await vscode.window.withProgress(
+
+    await vscode.window.withProgress(
       {
         title: 'SPB: Get Debug Levels',
         location: vscode.ProgressLocation.Notification
       },
       () => Connection.getConnection().getDebugLevels()
     );
+
+    let debuglevels = Connection.getConnection().getDebugLevels();
 
     const debugLevelSelected = await vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog.DeveloperName),{placeHolder : 'Select Debug Level'})
 
