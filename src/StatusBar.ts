@@ -5,9 +5,15 @@ const traceFlagStatusMap = {
   'Platform Integration User' : vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 42)
 }
 
+const mapEntity = {
+  'User' : 'User',
+  'Automated Process' : 'Aut. Proc.',
+  'Platform Integration User' : 'Plat. Int. User'
+}
+
 export function showTraceFlagStatus(tracedEntityType, expirationDate){
   const traceFlagStatus = traceFlagStatusMap[tracedEntityType];
-  traceFlagStatus.text = `Db ${tracedEntityType} Exp. (${new Date(expirationDate).toLocaleTimeString()})`;
+  traceFlagStatus.text = `Debug ${mapEntity[tracedEntityType]} (${new Date(expirationDate).toLocaleTimeString()})`;
   traceFlagStatus.show();
 }
 export function hideTraceFlagStatus(tracedEntityType){

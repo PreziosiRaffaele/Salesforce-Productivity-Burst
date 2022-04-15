@@ -50,7 +50,7 @@ export async function openOnSaleforce(){
   try{
     const link = await vscode.window.withProgress(
       {
-        title: 'RP: Open On Salesforce',
+        title: 'SPB: Open On Salesforce',
         location: vscode.ProgressLocation.Notification
       },
       () => openLink()

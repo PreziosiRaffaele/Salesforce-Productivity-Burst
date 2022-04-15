@@ -9,26 +9,28 @@ const TRACED_ENTITY_TYPES = ['User', 'Automated Process', 'Platform Integration 
 export async function enableDebugLog() {
   try{
     const tracedEntityType = await vscode.window.showQuickPick(TRACED_ENTITY_TYPES, {placeHolder : 'Select Traced Entity Type'})
+    if(tracedEntityType){
+      await vscode.window.withProgress(
+          {
+            title: 'SPB: Get Debug Levels',
+            location: vscode.ProgressLocation.Notification
+          },
+          () => Connection.getConnection().getDebugLevels()
+        );
 
-    await vscode.window.withProgress(
-      {
-        title: 'SPB: Get Debug Levels',
-        location: vscode.ProgressLocation.Notification
-      },
-      () => Connection.getConnection().getDebugLevels()
-    );
+        let debuglevels = await Connection.getConnection().getDebugLevels();
 
-    let debuglevels = Connection.getConnection().getDebugLevels();
-
-    const debugLevelSelected = await vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog.DeveloperName),{placeHolder : 'Select Debug Level'})
-
-    await vscode.window.withProgress(
-      {
-        title: 'SPB: Create Trace Flag',
-        location: vscode.ProgressLocation.Notification
-      },
-      () => createTraceFlag(tracedEntityType, debuglevels.find(debuglevel => debuglevel.DeveloperName == debugLevelSelected))
-    );
+        const debugLevelSelected = await vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog.DeveloperName),{placeHolder : 'Select Debug Level'})
+        if(debugLevelSelected){
+          await vscode.window.withProgress(
+            {
+              title: 'SPB: Create Trace Flag',
+              location: vscode.ProgressLocation.Notification
+            },
+            () => createTraceFlag(tracedEntityType, debuglevels.find(debuglevel => debuglevel.DeveloperName == debugLevelSelected))
+          );
+        }
+    }
   }catch(error){
     console.log(error)
     vscode.window.showInformationMessage(error);
@@ -85,17 +87,20 @@ async function getActiveTraceFlag(TracedEntitySfId){
 
 export async function disableDebugLog(){
 
-  const tracedEntityType = await vscode.window.showQuickPick(TRACED_ENTITY_TYPES, {placeHolder : 'Select Traced Entity Type'})
-  const TracedEntitySfId = await getTraceEntityId(tracedEntityType);
+  const tracedEntityType = await vscode.window.showQuickPick(TRACED_ENTITY_TYPES, {placeHolder : 'Select Traced Entity Type'});
 
-  await vscode.window.withProgress(
-    {
-      title: 'SPB: Delete Active Trace Flag',
-      location: vscode.ProgressLocation.Notification
-    },
-    () => deleteActiveTraceFlag(TracedEntitySfId)
-  );
-  hideTraceFlagStatus(tracedEntityType);
+  if(tracedEntityType){
+    const TracedEntitySfId = await getTraceEntityId(tracedEntityType);
+
+    await vscode.window.withProgress(
+      {
+        title: 'SPB: Delete Active Trace Flag',
+        location: vscode.ProgressLocation.Notification
+      },
+      () => deleteActiveTraceFlag(TracedEntitySfId)
+    );
+    hideTraceFlagStatus(tracedEntityType);
+  }
 }
 
 export async function deleteApexLogs(){
