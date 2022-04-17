@@ -5,43 +5,41 @@ import { Connection } from './Connection';
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
 
-const OPEN_ORG_COMMAND = `sfdx force:org:open -u "${Connection.getConnection().getUsername()}" -p `;
-
 var urlMapping = {
   "flow-meta.xml" : {
-    query : 'SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName  = ',
+    query: (developerName) => `SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName = '${developerName}'`,
     url : (queryResult) => `builder_platform_interaction/flowBuilder.app?flowId=${queryResult.LatestVersionId}`
   },
   "field-meta.xml" : {
-    query: 'SELECT Id,TableEnumOrId FROM customfield WHERE DeveloperName =',
+    query: (fieldApiName, objectId) => `SELECT Id,TableEnumOrId FROM CustomField WHERE DeveloperName = '${fieldApiName}' AND TableEnumOrId = '${objectId}'`,
     url : (queryResult) => `lightning/setup/ObjectManager/${queryResult.TableEnumOrId}/FieldsAndRelationships/${queryResult.Id}/view`
   },
   "validationRule-meta.xml" : {
-    query: 'SELECT Id,EntityDefinitionId FROM ValidationRule WHERE ValidationName =',
+    query: (validationName) => `SELECT Id,EntityDefinitionId FROM ValidationRule WHERE ValidationName = '${validationName}'`,
     url : (queryResult) => `lightning/setup/ObjectManager/${queryResult.EntityDefinitionId}/ValidationRules/${queryResult.Id}/view`
   },
   "flexipage-meta.xml" : {
-    query: 'SELECT Id FROM FlexiPage WHERE DeveloperName =',
+    query: (developerName) => `SELECT Id FROM FlexiPage WHERE DeveloperName = '${developerName}'`,
     url : (queryResult) => `https://vestas--leapup6.lightning.force.com/visualEditor/appBuilder.app?id=${queryResult.Id}`
   },
   "profile-meta.xml" : {
-    query: 'SELECT Id FROM Profile WHERE Name =',
+    query: (name) => `SELECT Id FROM Profile WHERE Name = '${name}'`,
     url : (queryResult) => queryResult.Id
   },
   "permissionset-meta.xml" : {
-    query: 'SELECT Id FROM PermissionSet WHERE Name =',
+    query: (name) => `SELECT Id FROM PermissionSet WHERE Name = '${name}'`,
     url : (queryResult) => queryResult.Id
   },
   "permissionsetgroup-meta.xml" : {
-    query: 'SELECT Id FROM PermissionSetGroup WHERE DeveloperName =',
+    query: (developerName) => `SELECT Id FROM PermissionSetGroup WHERE DeveloperName = '${developerName}'`,
     url : (queryResult) => queryResult.Id
   },
   "cls" : {
-    query: 'SELECT Id FROM ApexClass WHERE Name =',
+    query: (name) => `SELECT Id FROM ApexClass WHERE Name = '${name}'`,
     url : (queryResult) => queryResult.Id
   },
   "trigger" : {
-    query: 'SELECT Id FROM ApexTrigger WHERE Name =',
+    query: (name) => `SELECT Id FROM ApexTrigger WHERE Name = '${name}'`,
     url : (queryResult) => queryResult.Id
   }
 }
@@ -64,10 +62,47 @@ export async function openOnSaleforce(){
 async function openLink(){
   const openedClass = vscode.window.activeTextEditor;
   const pathParsed = path.parse(openedClass.document.fileName);
+  const arrayPath = pathParsed.dir.split(path.sep);
   const extension = pathParsed.base.substring(pathParsed.base.indexOf('.')+1);
-  const objectApiName = pathParsed.base.substring(0, pathParsed.base.indexOf('.'));
-  const objectRecord = await asyncQuery(`${urlMapping[extension].query} '${objectApiName}'`);
+  let metadataApiName = pathParsed.base.substring(0, pathParsed.base.indexOf('.'));
+  let objectId;
+  let url;
+  if(extension === 'field-meta.xml'){
+    let objectName = arrayPath[arrayPath.length - 2];
+    if(isStandard(metadataApiName)){
+      if(metadataApiName.slice(-2) === 'Id'){
+        metadataApiName = metadataApiName.substring(0,metadataApiName.length-2);
+      }
+      url = `lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${metadataApiName}/view`;
+    }else{
+      metadataApiName = getDeveloperName(metadataApiName);
+      objectId = await getObjectId(objectName);
+      const objectRecord = await asyncQuery(urlMapping[extension].query(metadataApiName, objectId));
+      url = urlMapping[extension].url(objectRecord[0])
+    }
+  }else{
+    const objectRecord = await asyncQuery(urlMapping[extension].query(metadataApiName));
+    url = urlMapping[extension].url(objectRecord[0])
+  }
+  await execAsync(`sfdx force:org:open -u "${Connection.getConnection().getUsername()}" -p ${url}`);
+}
 
-  const url = urlMapping[extension].url(objectRecord[0])
-  await execAsync(OPEN_ORG_COMMAND + url);
+async function getObjectId(objectName){
+  if(isStandard(objectName)){
+    return objectName;
+  }else{
+    const result = await asyncQuery(`Select Id from CustomObject WHERE DeveloperName = '${getDeveloperName(objectName)}'`)
+    return result[0].Id;
+  }
+}
+
+function isStandard(apiName){
+  return !(apiName.slice(-3) === '__c');
+}
+
+function getDeveloperName(name){
+  if(name.slice(-3) === '__c'){
+    name = name.substring(0,name.length-3);
+  }
+  return name;
 }
