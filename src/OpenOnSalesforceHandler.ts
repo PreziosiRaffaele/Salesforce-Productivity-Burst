@@ -59,6 +59,8 @@ class Factory{
       metadata = new RecordType(extension, pathParsed);
     }else if(extension === 'layout-meta.xml'){
       metadata = new PageLayout(extension, pathParsed);
+    }else if(extension === 'object-meta.xml'){
+      metadata = new SObject(extension, pathParsed);
     }
 
     return metadata;
@@ -76,6 +78,13 @@ class Metadata{
   }
 
   getUrl(){}
+}
+
+class SObject extends Metadata{
+  async getUrl(){
+    const objectId = await Connection.getConnection().getObjectId(this.metadataApiName);
+    return `lightning/setup/ObjectManager/${objectId}/Details/view`
+  }
 }
 
 class PageLayout extends Metadata{
