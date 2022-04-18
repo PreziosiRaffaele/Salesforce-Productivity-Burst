@@ -1,48 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { asyncQuery } from './Utils';
+import { asyncQuery, isStandard, remove__c } from './Utils';
 import { Connection } from './Connection';
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
-
-var urlMapping = {
-  "flow-meta.xml" : {
-    query: (developerName) => `SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName = '${developerName}'`,
-    url : (queryResult) => `builder_platform_interaction/flowBuilder.app?flowId=${queryResult.LatestVersionId}`
-  },
-  "field-meta.xml" : {
-    query: (fieldApiName, objectId) => `SELECT Id,TableEnumOrId FROM CustomField WHERE DeveloperName = '${fieldApiName}' AND TableEnumOrId = '${objectId}'`,
-    url : (queryResult) => `lightning/setup/ObjectManager/${queryResult.TableEnumOrId}/FieldsAndRelationships/${queryResult.Id}/view`
-  },
-  "validationRule-meta.xml" : {
-    query: (validationName) => `SELECT Id,EntityDefinitionId FROM ValidationRule WHERE ValidationName = '${validationName}'`,
-    url : (queryResult) => `lightning/setup/ObjectManager/${queryResult.EntityDefinitionId}/ValidationRules/${queryResult.Id}/view`
-  },
-  "flexipage-meta.xml" : {
-    query: (developerName) => `SELECT Id FROM FlexiPage WHERE DeveloperName = '${developerName}'`,
-    url : (queryResult) => `https://vestas--leapup6.lightning.force.com/visualEditor/appBuilder.app?id=${queryResult.Id}`
-  },
-  "profile-meta.xml" : {
-    query: (name) => `SELECT Id FROM Profile WHERE Name = '${name}'`,
-    url : (queryResult) => queryResult.Id
-  },
-  "permissionset-meta.xml" : {
-    query: (name) => `SELECT Id FROM PermissionSet WHERE Name = '${name}'`,
-    url : (queryResult) => queryResult.Id
-  },
-  "permissionsetgroup-meta.xml" : {
-    query: (developerName) => `SELECT Id FROM PermissionSetGroup WHERE DeveloperName = '${developerName}'`,
-    url : (queryResult) => queryResult.Id
-  },
-  "cls" : {
-    query: (name) => `SELECT Id FROM ApexClass WHERE Name = '${name}'`,
-    url : (queryResult) => queryResult.Id
-  },
-  "trigger" : {
-    query: (name) => `SELECT Id FROM ApexTrigger WHERE Name = '${name}'`,
-    url : (queryResult) => queryResult.Id
-  }
-}
 
 export async function openOnSaleforce(){
   try{
@@ -55,54 +16,138 @@ export async function openOnSaleforce(){
     );
   }catch(error){
     console.log(error)
-    vscode.window.showInformationMessage('It cannot be opened');
+    vscode.window.showInformationMessage('It cannot be opened on Salesforce');
   }
 }
 
 async function openLink(){
-  const openedClass = vscode.window.activeTextEditor;
-  const pathParsed = path.parse(openedClass.document.fileName);
-  const arrayPath = pathParsed.dir.split(path.sep);
+  const openedFile = vscode.window.activeTextEditor;
+  const pathParsed = path.parse(openedFile.document.fileName);
   const extension = pathParsed.base.substring(pathParsed.base.indexOf('.')+1);
-  let metadataApiName = pathParsed.base.substring(0, pathParsed.base.indexOf('.'));
-  let objectId;
-  let url;
-  if(extension === 'field-meta.xml'){
-    let objectName = arrayPath[arrayPath.length - 2];
-    if(isStandard(metadataApiName)){
-      if(metadataApiName.slice(-2) === 'Id'){
-        metadataApiName = metadataApiName.substring(0,metadataApiName.length-2);
-      }
-      url = `lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${metadataApiName}/view`;
-    }else{
-      metadataApiName = getDeveloperName(metadataApiName);
-      objectId = await getObjectId(objectName);
-      const objectRecord = await asyncQuery(urlMapping[extension].query(metadataApiName, objectId));
-      url = urlMapping[extension].url(objectRecord[0])
-    }
-  }else{
-    const objectRecord = await asyncQuery(urlMapping[extension].query(metadataApiName));
-    url = urlMapping[extension].url(objectRecord[0])
-  }
+
+  const metadata = new Factory().create(extension, pathParsed);
+  const url = await metadata.getUrl();
+
   await execAsync(`sfdx force:org:open -u "${Connection.getConnection().getUsername()}" -p ${url}`);
 }
+class Factory{
 
-async function getObjectId(objectName){
-  if(isStandard(objectName)){
-    return objectName;
-  }else{
-    const result = await asyncQuery(`Select Id from CustomObject WHERE DeveloperName = '${getDeveloperName(objectName)}'`)
-    return result[0].Id;
+  create = (extension, pathParsed) => {
+    if(!extension || !pathParsed) {
+        throw 'It cannot be opened';
+    }
+    let metadata;
+    if(extension === 'flow-meta.xml'){
+      metadata = new Flow(extension, pathParsed);
+    }else if(extension === 'field-meta.xml'){
+      metadata = new Field(extension, pathParsed);
+    }else if(extension === 'validationRule-meta.xml'){
+      metadata = new ValidationRule(extension, pathParsed);
+    }else if(extension === 'flexipage-meta.xml'){
+      metadata = new FlexiPage(extension, pathParsed);
+    }else if(extension === 'profile-meta.xml'){
+      metadata = new Profile(extension, pathParsed);
+    }else if(extension === 'permissionset-meta.xml'){
+      metadata = new PermissionSet(extension, pathParsed);
+    }else if(extension === 'permissionsetgroup-meta.xml'){
+      metadata = new PermissionSetGroup(extension, pathParsed);
+    }else if(extension === 'cls'){
+      metadata = new ApexClass(extension, pathParsed);
+    }else if(extension === 'trigger'){
+      metadata = new ApexTrigger(extension, pathParsed);
+    }
+
+    return metadata;
   }
 }
 
-function isStandard(apiName){
-  return !(apiName.slice(-3) === '__c');
+class Metadata{
+  extension;
+  pathParsed;
+  metadataApiName;
+  constructor(extension, pathParsed){
+    this.extension = extension;
+    this.pathParsed = pathParsed;
+    this.metadataApiName = pathParsed.base.substring(0, pathParsed.base.indexOf('.'));
+  }
+
+  getUrl(){}
 }
 
-function getDeveloperName(name){
-  if(name.slice(-3) === '__c'){
-    name = name.substring(0,name.length-3);
+class Flow extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName = '${this.metadataApiName}'`);
+    return `builder_platform_interaction/flowBuilder.app?flowId=${queryResult[0].LatestVersionId}`
   }
-  return name;
+}
+
+class ValidationRule extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id,EntityDefinitionId FROM ValidationRule WHERE ValidationName = '${this.metadataApiName}'`);
+    return `lightning/setup/ObjectManager/${queryResult[0].EntityDefinitionId}/ValidationRules/${queryResult[0].Id}/view`;
+  }
+}
+
+class FlexiPage extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM FlexiPage WHERE DeveloperName = '${this.metadataApiName}'`);
+    return `https://vestas--leapup6.lightning.force.com/visualEditor/appBuilder.app?id=${queryResult[0].Id}`
+  }
+}
+
+class Profile extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM Profile WHERE Name = '${this.metadataApiName}'`);
+    return queryResult[0].Id
+  }
+}
+
+class PermissionSet extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM PermissionSet WHERE Name = '${this.metadataApiName}'`);
+    return queryResult[0].Id
+  }
+}
+
+class PermissionSetGroup extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM PermissionSetGroup WHERE DeveloperName = '${this.metadataApiName}'`);
+    return queryResult[0].Id
+  }
+}
+
+class ApexClass extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM ApexClass WHERE Name = '${this.metadataApiName}'`);
+    return queryResult[0].Id
+  }
+}
+
+class ApexTrigger extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM ApexTrigger WHERE Name = '${this.metadataApiName}'`);
+    return queryResult[0].Id
+  }
+}
+
+class Field extends Metadata{
+  async getUrl(){
+    let url;
+
+    const arrayPath = this.pathParsed.dir.split(path.sep);
+    let objectName = arrayPath[arrayPath.length - 2];
+    if(isStandard(this.metadataApiName)){ //Per i campi e gli oggetti standard posso utilizzare come Id il developerName
+      if(this.metadataApiName.slice(-2) === 'Id'){
+        this.metadataApiName = this.metadataApiName.substring(0,this.metadataApiName.length-2);
+      }
+      url = `lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${this.metadataApiName}/view`;
+    }else{
+      this.metadataApiName = remove__c(this.metadataApiName);
+      const objectId = await Connection.getConnection().getObjectId(objectName);
+      const queryResult = await asyncQuery(`SELECT Id,TableEnumOrId FROM CustomField WHERE DeveloperName = '${this.metadataApiName}' AND TableEnumOrId = '${objectId}'`);
+      url = `lightning/setup/ObjectManager/${queryResult[0].TableEnumOrId}/FieldsAndRelationships/${queryResult[0].Id}/view`
+    }
+
+    return url;
+  }
 }

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { query,asyncQuery } from './Utils';
+import { isStandard, asyncQuery, remove__c } from './Utils';
 import { resetStatusBar } from './StatusBar';
 const execSync = require('child_process').execSync;
 export class Connection {
@@ -14,6 +14,7 @@ export class Connection {
   private instanceUrl;
   public mapNameClass_MapMethodName_Coverage;
 	public mapNameClass_TotalCoverage;
+  private mapObjectId;
   private static instance;
 
   private constructor(orgName) {
@@ -58,6 +59,32 @@ export class Connection {
       this.platformIntegrationUserId = user[0].Id
     }
     return this.platformIntegrationUserId;
+  }
+
+  private async populateMapObjectId(){
+    this.mapObjectId = new Map();
+    const customObjects = await asyncQuery(`Select Id,DeveloperName from CustomObject`);
+    for (let i = 0; i < customObjects.length; i++) {
+      this.mapObjectId.set(customObjects[i]["DeveloperName"], customObjects[i]["Id"]);
+    }
+  }
+
+  public async getObjectId(objectFolderName){
+    if(isStandard(objectFolderName)){
+      return objectFolderName;
+    }else{
+      let objectDeveloperName = remove__c(objectFolderName);
+      if(this.mapObjectId && this.mapObjectId.has(objectDeveloperName)){
+        return this.mapObjectId.get(objectDeveloperName);
+      }else{
+        await this.populateMapObjectId();
+        if(this.mapObjectId.has(objectDeveloperName)){
+          return this.mapObjectId.get(objectDeveloperName);
+        }else{
+          throw 'Object not found in the org!'
+        }
+      }
+    }
   }
 
   public async getDebugLevels(){

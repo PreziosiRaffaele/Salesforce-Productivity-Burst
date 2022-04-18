@@ -121,3 +121,14 @@ export async function upsertRecord(objType, SObject){
     await execAsync(`sfdx force:data:record:update -t -s${objType} -i ${id} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
   }
 }
+
+export function isStandard(apiName){
+  return !(apiName.slice(-3) === '__c');
+}
+
+export function remove__c(name){
+  if(name.slice(-3) === '__c'){
+    name = name.substring(0,name.length-3);
+  }
+  return name;
+}
