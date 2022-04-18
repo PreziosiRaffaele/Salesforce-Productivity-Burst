@@ -55,6 +55,10 @@ class Factory{
       metadata = new ApexClass(extension, pathParsed);
     }else if(extension === 'trigger'){
       metadata = new ApexTrigger(extension, pathParsed);
+    }else if(extension === 'recordType-meta.xml'){
+      metadata = new RecordType(extension, pathParsed);
+    }else if(extension === 'layout-meta.xml'){
+      metadata = new PageLayout(extension, pathParsed);
     }
 
     return metadata;
@@ -74,6 +78,27 @@ class Metadata{
   getUrl(){}
 }
 
+class PageLayout extends Metadata{
+  async getUrl(){
+    const splitObjectNameLayoutName = this.metadataApiName.split('-');
+    const objectName = splitObjectNameLayoutName[0];
+    const layoutName = splitObjectNameLayoutName[1];
+    const objectId = await Connection.getConnection().getObjectId(objectName);
+    const queryResult = await asyncQuery(`SELECT Id FROM Layout WHERE Name = '${decodeURIComponent(layoutName)}'`);
+    return `lightning/setup/ObjectManager/${objectId}/PageLayouts/${queryResult[0].Id}/view`
+  }
+}
+
+class RecordType extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM RecordType WHERE Name = '${this.metadataApiName}'`);
+    const arrayPath = this.pathParsed.dir.split(path.sep);
+    let objectFolderName = arrayPath[arrayPath.length - 2];
+    const objectId = await Connection.getConnection().getObjectId(objectFolderName);
+    return `lightning/setup/ObjectManager/${objectId}/RecordTypes/${queryResult[0].Id}/view`
+  }
+}
+
 class Flow extends Metadata{
   async getUrl(){
     const queryResult = await asyncQuery(`SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName = '${this.metadataApiName}'`);
@@ -91,7 +116,7 @@ class ValidationRule extends Metadata{
 class FlexiPage extends Metadata{
   async getUrl(){
     const queryResult = await asyncQuery(`SELECT Id FROM FlexiPage WHERE DeveloperName = '${this.metadataApiName}'`);
-    return `https://vestas--leapup6.lightning.force.com/visualEditor/appBuilder.app?id=${queryResult[0].Id}`
+    return `visualEditor/appBuilder.app?id=${queryResult[0].Id}`
   }
 }
 
@@ -135,17 +160,17 @@ class Field extends Metadata{
     let url;
 
     const arrayPath = this.pathParsed.dir.split(path.sep);
-    let objectName = arrayPath[arrayPath.length - 2];
+    let objectFolderName = arrayPath[arrayPath.length - 2];
     if(isStandard(this.metadataApiName)){ //Per i campi e gli oggetti standard posso utilizzare come Id il developerName
       if(this.metadataApiName.slice(-2) === 'Id'){
         this.metadataApiName = this.metadataApiName.substring(0,this.metadataApiName.length-2);
       }
-      url = `lightning/setup/ObjectManager/${objectName}/FieldsAndRelationships/${this.metadataApiName}/view`;
+      url = `lightning/setup/ObjectManager/${objectFolderName}/FieldsAndRelationships/${this.metadataApiName}/view`;
     }else{
       this.metadataApiName = remove__c(this.metadataApiName);
-      const objectId = await Connection.getConnection().getObjectId(objectName);
-      const queryResult = await asyncQuery(`SELECT Id,TableEnumOrId FROM CustomField WHERE DeveloperName = '${this.metadataApiName}' AND TableEnumOrId = '${objectId}'`);
-      url = `lightning/setup/ObjectManager/${queryResult[0].TableEnumOrId}/FieldsAndRelationships/${queryResult[0].Id}/view`
+      const objectId = await Connection.getConnection().getObjectId(objectFolderName);
+      const queryResult = await asyncQuery(`SELECT Id FROM CustomField WHERE DeveloperName = '${this.metadataApiName}' AND TableEnumOrId = '${objectId}'`);
+      url = `lightning/setup/ObjectManager/${objectId}/FieldsAndRelationships/${queryResult[0].Id}/view`
     }
 
     return url;
