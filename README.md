@@ -1,5 +1,6 @@
-# Salesforce Productivity Burst
-Boost your productivity on Salesforce with new VsCode commands.
+# <b>Salesforce Productivity <span style="color: red;">Burst</span></b>
+**Boost your productivity** on Salesforce with new VsCode commands.<br>
+<code>(Contact me on [My Linkedin](https://www.linkedin.com/in/raffaele-preziosi-5835ba186/) for any ideas or suggestions)</code>
 ## Get Total Coverage and single methods test coverage of your Apex Classes/Triggers as in Salesforce Developer Console.
 
 - **Instructions:**
@@ -13,10 +14,22 @@ Boost your productivity on Salesforce with new VsCode commands.
 
 ![Recording of Apex Get Coverage](https://github.com/PreziosiRaffaele/ApexGetCoverage/blob/main/demo.gif?raw=true)
 
-## Open Flows, Fields, Validation Rules, Profiles etc... in Salesforce from xml file.
+## Quick opening metadata in SFDC from xml files.
+- **Instructions:**
+  1. Open xml file in the repository
+  2. Click search icon in the status bar
 
-## Switch on tracelog quickly on your User/Automated Process/Integration Platform User.
+> *Supported Metadata: flow, field, validation Rule, flexi page, profile, permission set, permission set group, class, trigger, recordtype, layout*
 
-## Delete quickly all Apex Logs.
+![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/ApexGetCoverage/d8e63d0657931efd5bebc1967adf3679beb87cd0/OpenOnSalesForceDemo.gif)
 
-*(Contact me on [my Linkedin](https://www.linkedin.com/in/raffaele-preziosi-5835ba186/) for any ideas and suggestions)*
+## Quick activating of debug logging for your User, Automated Process, Integration Platform User.
+- **Instructions:**
+  1. Run command "SPB: Create Trace Flag"
+  2. Select your user or Automated Process or Platform Integration User
+  3. Select Debug Level
+  4. The entity will be tracked during 1 hour (check in your status bar the expiration date)
+
+> *Other commands: Disable Active trace flag, Delete all Apex Logs*
+
+![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/ApexGetCoverage/main/createTraceFlagDemo.gif)
