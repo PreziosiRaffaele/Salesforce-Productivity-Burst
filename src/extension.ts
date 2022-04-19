@@ -36,8 +36,11 @@ export function activate(context: vscode.ExtensionContext) {
   }));
 
   createButtonLinkSF();
+
+  console.log("Salesforce Productivity Burst Activated")
 }
 
 export function deactivate() {
+  console.log("Salesforce Productivity Burst Deactivated")
 }
 

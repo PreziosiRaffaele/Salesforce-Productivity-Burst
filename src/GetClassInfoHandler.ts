@@ -21,7 +21,7 @@ async function getClassInfo(){
   const className = getCurrentClassName();
   const classInfo = await asyncQuery( 'SELECT Name, CreatedBy.Name,LastModifiedBy.Name, FORMAT(CreatedDate), FORMAT(LastModifiedDate) '
                           + 'FROM ApexClass '
-                          + 'WHERE Name = \'' + className + '\'');
+                          + 'WHERE Name = \'' + className + '\'', true);
   if(classInfo.length > 0){
     return classInfo;
   }else{

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { asyncQuery, isStandard, remove__c } from './Utils';
+import { asyncQuery, isStandardField, remove__c, isCustomMetadata, isPlatformEvent } from './Utils';
 import { Connection } from './Connection';
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
@@ -23,12 +23,22 @@ export async function openOnSaleforce(){
 async function openLink(){
   const openedFile = vscode.window.activeTextEditor;
   const pathParsed = path.parse(openedFile.document.fileName);
-  const extension = pathParsed.base.substring(pathParsed.base.indexOf('.')+1);
+  const extension = getExtension(pathParsed.base)
 
   const metadata = new Factory().create(extension, pathParsed);
   const url = await metadata.getUrl();
 
   await execAsync(`sfdx force:org:open -u "${Connection.getConnection().getUsername()}" -p ${url}`);
+}
+
+function getExtension(pathParsedBase){
+  const fileNameSplitted = pathParsedBase.split('.');
+
+  if(fileNameSplitted.length > 2){
+    return `${fileNameSplitted[fileNameSplitted.length - 2]}.${fileNameSplitted[fileNameSplitted.length - 1]}`
+  }else{
+    return fileNameSplitted[fileNameSplitted.length - 1];
+  }
 }
 class Factory{
 
@@ -61,6 +71,8 @@ class Factory{
       metadata = new PageLayout(extension, pathParsed);
     }else if(extension === 'object-meta.xml'){
       metadata = new SObject(extension, pathParsed);
+    }else if(extension === 'md-meta.xml'){
+      metadata = new CustomMetadata(extension, pathParsed);
     }
 
     return metadata;
@@ -74,7 +86,7 @@ class Metadata{
   constructor(extension, pathParsed){
     this.extension = extension;
     this.pathParsed = pathParsed;
-    this.metadataApiName = pathParsed.base.substring(0, pathParsed.base.indexOf('.'));
+    this.metadataApiName = pathParsed.base.substring(0, ((pathParsed.base.length - (extension.length + 1))))
   }
 
   getUrl(){}
@@ -83,7 +95,24 @@ class Metadata{
 class SObject extends Metadata{
   async getUrl(){
     const objectId = await Connection.getConnection().getObjectId(this.metadataApiName);
-    return `lightning/setup/ObjectManager/${objectId}/Details/view`
+    if(isCustomMetadata(this.metadataApiName)){
+      return `lightning/setup/CustomMetadata/page?address=%2F${objectId}%3Fsetupid%3DCustomMetadata`
+    }else if(isPlatformEvent(this.metadataApiName)){
+      return `lightning/setup/EventObjects/page?address=%2F${objectId}%3Fsetupid%3DEventObjects`
+    }else{
+      return `lightning/setup/ObjectManager/${objectId}/Details/view`
+    }
+  }
+}
+
+class CustomMetadata extends Metadata{
+  async getUrl(){
+    const splitObjectNameCmdName = this.metadataApiName.split('.');
+    const objectName = splitObjectNameCmdName[0];
+    const cmdRecordDeveloperName = splitObjectNameCmdName[1];
+
+    const queryResult = await asyncQuery(`SELECT Id FROM ${objectName}__mdt WHERE DeveloperName = '${decodeURIComponent(cmdRecordDeveloperName)}'`, false);
+    return `lightning/setup/CustomMetadata/page?address=%2F${queryResult[0].Id}`
   }
 }
 
@@ -93,14 +122,14 @@ class PageLayout extends Metadata{
     const objectName = splitObjectNameLayoutName[0];
     const layoutName = splitObjectNameLayoutName[1];
     const objectId = await Connection.getConnection().getObjectId(objectName);
-    const queryResult = await asyncQuery(`SELECT Id FROM Layout WHERE Name = '${decodeURIComponent(layoutName)}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM Layout WHERE Name = '${decodeURIComponent(layoutName)}'`, true);
     return `lightning/setup/ObjectManager/${objectId}/PageLayouts/${queryResult[0].Id}/view`
   }
 }
 
 class RecordType extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM RecordType WHERE Name = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM RecordType WHERE Name = '${this.metadataApiName}'`, true);
     const arrayPath = this.pathParsed.dir.split(path.sep);
     let objectFolderName = arrayPath[arrayPath.length - 2];
     const objectId = await Connection.getConnection().getObjectId(objectFolderName);
@@ -110,56 +139,56 @@ class RecordType extends Metadata{
 
 class Flow extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName = '${this.metadataApiName}'`, true);
     return `builder_platform_interaction/flowBuilder.app?flowId=${queryResult[0].LatestVersionId}`
   }
 }
 
 class ValidationRule extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id,EntityDefinitionId FROM ValidationRule WHERE ValidationName = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id,EntityDefinitionId FROM ValidationRule WHERE ValidationName = '${this.metadataApiName}'`, true);
     return `lightning/setup/ObjectManager/${queryResult[0].EntityDefinitionId}/ValidationRules/${queryResult[0].Id}/view`;
   }
 }
 
 class FlexiPage extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM FlexiPage WHERE DeveloperName = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM FlexiPage WHERE DeveloperName = '${this.metadataApiName}'`, true);
     return `visualEditor/appBuilder.app?id=${queryResult[0].Id}`
   }
 }
 
 class Profile extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM Profile WHERE Name = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM Profile WHERE Name = '${this.metadataApiName}'`, true);
     return queryResult[0].Id
   }
 }
 
 class PermissionSet extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM PermissionSet WHERE Name = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM PermissionSet WHERE Name = '${this.metadataApiName}'`, true);
     return queryResult[0].Id
   }
 }
 
 class PermissionSetGroup extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM PermissionSetGroup WHERE DeveloperName = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM PermissionSetGroup WHERE DeveloperName = '${this.metadataApiName}'`, true);
     return queryResult[0].Id
   }
 }
 
 class ApexClass extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM ApexClass WHERE Name = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM ApexClass WHERE Name = '${this.metadataApiName}'`, true);
     return queryResult[0].Id
   }
 }
 
 class ApexTrigger extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM ApexTrigger WHERE Name = '${this.metadataApiName}'`);
+    const queryResult = await asyncQuery(`SELECT Id FROM ApexTrigger WHERE Name = '${this.metadataApiName}'`, true);
     return queryResult[0].Id
   }
 }
@@ -170,7 +199,7 @@ class Field extends Metadata{
 
     const arrayPath = this.pathParsed.dir.split(path.sep);
     let objectFolderName = arrayPath[arrayPath.length - 2];
-    if(isStandard(this.metadataApiName)){ //Per i campi e gli oggetti standard posso utilizzare come Id il developerName
+    if(isStandardField(this.metadataApiName)){ //Per i campi e gli oggetti standard posso utilizzare come Id il developerName
       if(this.metadataApiName.slice(-2) === 'Id'){
         this.metadataApiName = this.metadataApiName.substring(0,this.metadataApiName.length-2);
       }
@@ -178,8 +207,14 @@ class Field extends Metadata{
     }else{
       this.metadataApiName = remove__c(this.metadataApiName);
       const objectId = await Connection.getConnection().getObjectId(objectFolderName);
-      const queryResult = await asyncQuery(`SELECT Id FROM CustomField WHERE DeveloperName = '${this.metadataApiName}' AND TableEnumOrId = '${objectId}'`);
-      url = `lightning/setup/ObjectManager/${objectId}/FieldsAndRelationships/${queryResult[0].Id}/view`
+      const queryResult = await asyncQuery(`SELECT Id FROM CustomField WHERE DeveloperName = '${this.metadataApiName}' AND TableEnumOrId = '${objectId}'`, true);
+      if(isCustomMetadata(objectFolderName)){
+        url = `lightning/setup/CustomMetadata/page?address=%2F${queryResult[0].Id}%3Fsetupid%3DCustomMetadata`;
+      }else if(isPlatformEvent(objectFolderName)){
+        url = `lightning/setup/EventObjects/page?address=%2F${queryResult[0].Id}%3Fsetupid%3DEventObjects`;
+      }else{
+        url = `lightning/setup/ObjectManager/${objectId}/FieldsAndRelationships/${queryResult[0].Id}/view`;
+      }
     }
 
     return url;

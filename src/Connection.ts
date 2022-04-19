@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { isStandard, asyncQuery, remove__c } from './Utils';
+import { isStandardObject, asyncQuery, remove__c, remove__mdt, remove__e} from './Utils';
 import { resetStatusBar } from './StatusBar';
 const execSync = require('child_process').execSync;
 export class Connection {
@@ -39,7 +39,7 @@ export class Connection {
 
   public async getUserId(){
     if(!this.userId){
-      const user = await asyncQuery(`SELECT Id FROM User WHERE Username = '${this.userName}' LIMIT 1`);
+      const user = await asyncQuery(`SELECT Id FROM User WHERE Username = '${this.userName}' LIMIT 1`, true);
       this.userId = user[0].Id
     }
     return this.userId;
@@ -47,7 +47,7 @@ export class Connection {
 
   public async getAutomatedProcessUserId(){
     if(!this.automatedProcessUserId){
-      const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Automated Process' LIMIT 1`);
+      const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Automated Process' LIMIT 1`, true);
       this.automatedProcessUserId = user[0].Id
     }
     return this.automatedProcessUserId;
@@ -55,7 +55,7 @@ export class Connection {
 
   public async getPlatformIntegrationUserId(){
     if(!this.platformIntegrationUserId){
-      const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Platform Integration User' LIMIT 1`);
+      const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Platform Integration User' LIMIT 1`, true);
       this.platformIntegrationUserId = user[0].Id
     }
     return this.platformIntegrationUserId;
@@ -63,17 +63,17 @@ export class Connection {
 
   private async populateMapObjectId(){
     this.mapObjectId = new Map();
-    const customObjects = await asyncQuery(`Select Id,DeveloperName from CustomObject`);
+    const customObjects = await asyncQuery(`Select Id,DeveloperName from CustomObject`, true);
     for (let i = 0; i < customObjects.length; i++) {
       this.mapObjectId.set(customObjects[i]["DeveloperName"], customObjects[i]["Id"]);
     }
   }
 
   public async getObjectId(objectFolderName){
-    if(isStandard(objectFolderName)){
+    if(isStandardObject(objectFolderName)){
       return objectFolderName;
     }else{
-      let objectDeveloperName = remove__c(objectFolderName);
+      let objectDeveloperName = remove__e(remove__mdt(remove__c(objectFolderName)));
       if(this.mapObjectId && this.mapObjectId.has(objectDeveloperName)){
         return this.mapObjectId.get(objectDeveloperName);
       }else{
@@ -89,7 +89,7 @@ export class Connection {
 
   public async getDebugLevels(){
     if(!this.debugLevels){
-      this.debugLevels = await asyncQuery('SELECT Id,DeveloperName FROM Debuglevel');
+      this.debugLevels = await asyncQuery('SELECT Id,DeveloperName FROM Debuglevel', true);
     }
     if(this.debugLevels.length > 0){
       return this.debugLevels;

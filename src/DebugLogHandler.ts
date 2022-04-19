@@ -77,7 +77,7 @@ export async function deleteActiveTraceFlag(TracedEntitySfId){
 
 async function getActiveTraceFlag(TracedEntitySfId){
   const NOW = new Date(Date.now()).toISOString();
-  const traceFlags = await asyncQuery(`SELECT Id FROM TraceFlag WHERE TracedEntityId = '${TracedEntitySfId}' AND ExpirationDate >= ${NOW} ORDER BY ExpirationDate DESC LIMIT 1`);
+  const traceFlags = await asyncQuery(`SELECT Id FROM TraceFlag WHERE TracedEntityId = '${TracedEntitySfId}' AND ExpirationDate >= ${NOW} ORDER BY ExpirationDate DESC LIMIT 1`, true);
   if(traceFlags || traceFlags.length > 0){
     return traceFlags[0];
   }else{
@@ -117,6 +117,6 @@ export async function deleteApexLogs(){
 }
 
 async function deleteLogs(){
-  let apexLogs = await asyncQuery(`SELECT Id FROM ApexLog ORDER BY LastModifiedDate ASC LIMIT 50000`);
+  let apexLogs = await asyncQuery(`SELECT Id FROM ApexLog ORDER BY LastModifiedDate ASC LIMIT 50000`, true);
   await deleteRecords(apexLogs);
 }

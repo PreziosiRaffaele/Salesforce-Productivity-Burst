@@ -55,7 +55,7 @@ export async function getCoverage() {
 async function runAsync(connection, className){
   let records = await asyncQuery( 'SELECT ApexTestClass.Name,TestMethodName, NumLinesCovered, NumLinesUncovered, Coverage '
                                 + 'FROM ApexCodeCoverage '
-                                + 'WHERE ApexClassOrTrigger.name = \'' + className + '\' order by createddate desc LIMIT 20');
+                                + 'WHERE ApexClassOrTrigger.name = \'' + className + '\' order by createddate desc LIMIT 20', true);
   if(records.length > 0){
     let mapMethodName_Coverage = new Map();
     records.forEach(record => {
@@ -66,7 +66,7 @@ async function runAsync(connection, className){
 
     records = await asyncQuery( 'SELECT ApexClassOrTrigger.Name, NumLinesCovered, NumLinesUncovered, Coverage '
                               + 'FROM ApexCodeCoverageAggregate '
-                              + 'WHERE ApexClassOrTrigger.Name = \'' + className + '\'');
+                              + 'WHERE ApexClassOrTrigger.Name = \'' + className + '\'', true);
 
                               connection.mapNameClass_TotalCoverage.set(className, records);
   }

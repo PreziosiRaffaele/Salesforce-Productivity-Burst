@@ -75,8 +75,9 @@ export function query(soql){
   return JSON.parse(queryResult.toString())["result"].records;
 }
 
-export async function asyncQuery(soql){
-  let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getConnection().getUsername()}" --json`;
+export async function asyncQuery(soql, isRestApi){
+  const restApiCommand = isRestApi ? '-t' : '';
+  let query = `sfdx force:data:soql:query -q "${soql}" ${restApiCommand} -u "${Connection.getConnection().getUsername()}" --json`;
   let queryResult = await execAsync(query);
   return JSON.parse(queryResult.stdout)["result"].records;
 }
@@ -122,12 +123,38 @@ export async function upsertRecord(objType, SObject){
   }
 }
 
-export function isStandard(apiName){
+export function isStandardField(apiName){
   return !(apiName.slice(-3) === '__c');
+}
+
+export function isStandardObject(apiName){
+  return !(apiName.slice(-3) === '__c' || isCustomMetadata(apiName) || isPlatformEvent(apiName));
 }
 
 export function remove__c(name){
   if(name.slice(-3) === '__c'){
+    name = name.substring(0,name.length-3);
+  }
+  return name;
+}
+
+export function isCustomMetadata(apiName){
+  return (apiName.slice(-5) === '__mdt');
+}
+
+export function isPlatformEvent(apiName){
+  return (apiName.slice(-3) === '__e');
+}
+
+export function remove__mdt(name){
+  if(name.slice(-5) === '__mdt'){
+    name = name.substring(0,name.length-5);
+  }
+  return name;
+}
+
+export function remove__e(name){
+  if(name.slice(-3) === '__e'){
     name = name.substring(0,name.length-3);
   }
   return name;
