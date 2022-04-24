@@ -1,13 +1,13 @@
 'use strict';
 import * as vscode from 'vscode';
 import { getCoverage } from './GetCoverageHandler';
-import { runClassInfo } from './GetClassInfoHandler';
 import { enableDebugLog, disableDebugLog, deleteApexLogs } from './DebugLogHandler';
 import { createButtonLinkSF } from './StatusBar';
 import { Connection } from './Connection';
 import { openOnSaleforce }from './OpenOnSalesforceHandler';
 
 export function activate(context: vscode.ExtensionContext) {
+  console.time('SPB Activation time');
 
   Connection.getConnection();
 
@@ -27,10 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
     deleteApexLogs();
   }));
 
-  context.subscriptions.push(vscode.commands.registerCommand('extension.getClassInfo', () => {
-    runClassInfo();
-  }));
-
   context.subscriptions.push(vscode.commands.registerCommand('extension.openOnSaleforce', () => {
     openOnSaleforce();
   }));
@@ -38,6 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
   createButtonLinkSF();
 
   console.log("Salesforce Productivity Burst Activated")
+  console.timeEnd('SPB Activation time');
 }
 
 export function deactivate() {

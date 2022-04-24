@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 
 export function getDecorationForCoveredLines(){
-  let opacity = Number(vscode.workspace.getConfiguration().get('apexGetCoverage.Brightness'))/100;
-  let color = `rgba(` + vscode.workspace.getConfiguration().get('apexGetCoverage.CoveredLinesColor') + `, ${opacity})`;
+  let opacity = Number(vscode.workspace.getConfiguration().get('getCoverage.Brightness'))/100;
+  let color = `rgba(` + vscode.workspace.getConfiguration().get('getCoverage.CoveredLinesColor') + `, ${opacity})`;
   return vscode.window.createTextEditorDecorationType(
     {
       backgroundColor: color,
@@ -13,8 +13,8 @@ export function getDecorationForCoveredLines(){
 }
 
 export function getDecorationForUncoveredLines(){
-  let opacity = Number(vscode.workspace.getConfiguration().get('apexGetCoverage.Brightness'))/100;
-  let color = `rgba(` + vscode.workspace.getConfiguration().get('apexGetCoverage.UncoveredLinesColor') + `, ${opacity})`;
+  let opacity = Number(vscode.workspace.getConfiguration().get('getCoverage.Brightness'))/100;
+  let color = `rgba(` + vscode.workspace.getConfiguration().get('getCoverage.UncoveredLinesColor') + `, ${opacity})`;
   return vscode.window.createTextEditorDecorationType(
     {
       backgroundColor: color,

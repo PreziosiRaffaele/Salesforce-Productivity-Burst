@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { asyncQuery, isStandardField, remove__c, isCustomMetadata, isPlatformEvent } from './Utils';
+import { asyncQuery, isStandardField, getObjectFieldDeveloperName, isCustomMetadata, isPlatformEvent } from './Utils';
 import { Connection } from './Connection';
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
@@ -205,7 +205,7 @@ class Field extends Metadata{
       }
       url = `lightning/setup/ObjectManager/${objectFolderName}/FieldsAndRelationships/${this.metadataApiName}/view`;
     }else{
-      this.metadataApiName = remove__c(this.metadataApiName);
+      this.metadataApiName = getObjectFieldDeveloperName(this.metadataApiName);
       const objectId = await Connection.getConnection().getObjectId(objectFolderName);
       const queryResult = await asyncQuery(`SELECT Id FROM CustomField WHERE DeveloperName = '${this.metadataApiName}' AND TableEnumOrId = '${objectId}'`, true);
       if(isCustomMetadata(objectFolderName)){

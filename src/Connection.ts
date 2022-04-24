@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { isStandardObject, asyncQuery, remove__c, remove__mdt, remove__e} from './Utils';
+import { isStandardObject, asyncQuery, getObjectFieldDeveloperName} from './Utils';
 import { resetStatusBar } from './StatusBar';
 const execSync = require('child_process').execSync;
 export class Connection {
@@ -73,7 +73,7 @@ export class Connection {
     if(isStandardObject(objectFolderName)){
       return objectFolderName;
     }else{
-      let objectDeveloperName = remove__e(remove__mdt(remove__c(objectFolderName)));
+      let objectDeveloperName = getObjectFieldDeveloperName(objectFolderName);
       if(this.mapObjectId && this.mapObjectId.has(objectDeveloperName)){
         return this.mapObjectId.get(objectDeveloperName);
       }else{
