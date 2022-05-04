@@ -73,6 +73,8 @@ class Factory{
       metadata = new SObject(extension, pathParsed);
     }else if(extension === 'md-meta.xml'){
       metadata = new CustomMetadata(extension, pathParsed);
+    }else if(extension === 'globalValueSet-meta.xml'){
+      metadata = new GlobalValueSet(extension, pathParsed);
     }
 
     return metadata;
@@ -105,6 +107,13 @@ class SObject extends Metadata{
   }
 }
 
+class GlobalValueSet extends Metadata{
+  async getUrl(){
+    const queryResult = await asyncQuery(`SELECT Id FROM GlobalValueSet WHERE DeveloperName  = '${this.metadataApiName}'`, true);
+    return `lightning/setup/Picklists/page?address=%2F${queryResult[0].Id}`
+  }
+}
+
 class CustomMetadata extends Metadata{
   async getUrl(){
     const splitObjectNameCmdName = this.metadataApiName.split('.');
@@ -129,7 +138,7 @@ class PageLayout extends Metadata{
 
 class RecordType extends Metadata{
   async getUrl(){
-    const queryResult = await asyncQuery(`SELECT Id FROM RecordType WHERE Name = '${this.metadataApiName}'`, true);
+    const queryResult = await asyncQuery(`SELECT Id FROM RecordType WHERE DeveloperName = '${this.metadataApiName}'`, false);
     const arrayPath = this.pathParsed.dir.split(path.sep);
     let objectFolderName = arrayPath[arrayPath.length - 2];
     const objectId = await Connection.getConnection().getObjectId(objectFolderName);
