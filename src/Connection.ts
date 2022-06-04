@@ -21,7 +21,12 @@ export class Connection {
     this.orgName = orgName;
     let response = execSync('sfdx force:auth:list --json');
     let accessOrgs = JSON.parse(response.toString())["result"];
-    let accessOrg = accessOrgs.find(accessOrg => accessOrg.alias == orgName)
+    let accessOrg = accessOrgs.find(accessOrg => {
+				if(accessOrg.alias){
+						return accessOrg.alias.split(',').includes(orgName);
+				} return false;
+      }
+    )
     this.userName = accessOrg.username;
     this.instanceUrl = accessOrg.instanceUrl;
     resetStatusBar();
