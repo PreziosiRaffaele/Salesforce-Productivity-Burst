@@ -16,18 +16,20 @@ export async function enableDebugLog() {
             () => Connection.getConnection().getDebugLevels()
         )]).then((values) => {
             let tracedEntityType = values[0];
-            let debuglevels = Array.isArray(values[1]) ? values[1] : [];
-            vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog["DeveloperName"]), { placeHolder: 'Select Debug Level' }).then((debugLevelSelected) => {
-                if (debugLevelSelected) {
-                    vscode.window.withProgress(
-                        {
-                            title: 'SPB: Create Trace Flag',
-                            location: vscode.ProgressLocation.Notification
-                        },
-                        () => createTraceFlag(tracedEntityType, debuglevels.find(debuglevel => debuglevel["DeveloperName"] == debugLevelSelected))
-                    );
-                }
-            })
+            if(Array.isArray(values[1])){
+                let debuglevels = values[1];
+                vscode.window.showQuickPick(debuglevels.map(debuglog => debuglog["DeveloperName"]), { placeHolder: 'Select Debug Level' }).then((debugLevelSelected) => {
+                    if (debugLevelSelected) {
+                        vscode.window.withProgress(
+                            {
+                                title: 'SPB: Create Trace Flag',
+                                location: vscode.ProgressLocation.Notification
+                            },
+                            () => createTraceFlag(tracedEntityType, debuglevels.find(debuglevel => debuglevel["DeveloperName"] == debugLevelSelected))
+                        );
+                    }
+                })
+            }
         })
     } catch (error) {
         console.log(error)
