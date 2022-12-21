@@ -4,6 +4,7 @@ import { getCoverage } from './GetCoverageHandler';
 import { enableDebugLog, disableDebugLog, deleteApexLogs } from './DebugLogHandler';
 import { createButtonLinkSF } from './StatusBar';
 import { Connection } from './Connection';
+import { refreshMetadata } from './GetDataFromOrg';
 import { openOnSaleforce }from './OpenOnSalesforceHandler';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -13,6 +14,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
     getCoverage();
+  }));
+
+  context.subscriptions.push(vscode.commands.registerCommand('extension.refreshMetadata', () => {
+    refreshMetadata();
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.createTraceFlag', () => {

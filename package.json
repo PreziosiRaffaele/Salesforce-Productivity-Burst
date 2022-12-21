@@ -26,6 +26,10 @@
                 "title": "SPB: Get Coverage"
             },
             {
+                "command": "extension.refreshMetadata",
+                "title": "SPB: Refresh Metadata"
+            },
+            {
                 "command": "extension.createTraceFlag",
                 "title": "SPB: Create Trace Flag"
             },
@@ -74,7 +78,7 @@
     },
     "devDependencies": {
         "@types/mocha": "^2.2.42",
-        "@types/node": "^7.0.43",
+        "@types/node": "^10.10.0",
         "typescript": "^2.6.1",
         "vscode": "^1.1.30"
     },
