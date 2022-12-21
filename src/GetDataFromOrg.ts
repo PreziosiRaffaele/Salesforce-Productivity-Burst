@@ -1,31 +1,9 @@
 import { Connection } from './Connection';
 import { asyncQuery, createFile } from './Utils';
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-const dataJson = {
-    "data": [
-        {
-            "Name": "Flow",
-            "definitions": [
-                {
-                    "query": "SELECT Id, DeveloperName FROM FlowDefinition",
-                    "isRestApi": true,
-                    "fileName": "flow"
-                }
-            ]
-        },
-        {
-            "Name": "Profile",
-            "definitions": [
-                {
-                    "query": "SELECT Id, Name FROM Profile",
-                    "isRestApi": true,
-                    "fileName": "profile"
-                }
-            ]
-        }
-    ]
-};
+const { readFile } = require("fs/promises");
+import * as path from 'path'
+import { cont } from './extension'
 
 export async function refreshMetadata() {
     try {
@@ -43,18 +21,22 @@ export async function refreshMetadata() {
 }
 
 export function downloadMetadata(dataType){
-    let promiseList = [];
-    dataJson.data.forEach(data => {
-        if(!dataType || data.Name == dataType){
-            data.definitions.forEach(definition => {
-                promiseList.push(new Promise<void>((resolve, reject) => {
-                    asyncQuery(definition.query, definition.isRestApi)
-                    .then((queryResult) => {
-                        createFile(`./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${definition.fileName}.json`, JSON.stringify(queryResult), () => resolve());
-                    })
-                }))
-            })
-        }
+    const dataPath = vscode.Uri.file(path.join(cont.extensionPath, 'src', 'data.json'));
+    return readFile(dataPath.fsPath).then( (dataJson) => {
+        let metadata = JSON.parse(dataJson);
+        let promiseList = [];
+        metadata.data.forEach(data => {
+            if(!dataType || data.Name == dataType){
+                data.definitions.forEach(definition => {
+                    promiseList.push(new Promise<void>((resolve, reject) => {
+                        asyncQuery(definition.query, definition.isRestApi)
+                        .then((queryResult) => {
+                            createFile(`./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${definition.fileName}.json`, JSON.stringify(queryResult), () => resolve());
+                        })
+                    }))
+                })
+            }
+        })
+        return Promise.all(promiseList);
     })
-    return Promise.all(promiseList);
 }
