@@ -2,23 +2,15 @@
     "data": [
         {
             "Name": "Flow",
-            "definitions": [
-                {
-                    "query": "SELECT Id, DeveloperName FROM FlowDefinition",
-                    "isRestApi": true,
-                    "fileName": "flow"
-                }
-            ]
+            "query": "SELECT Id, DeveloperName FROM FlowDefinition",
+            "isRestApi": true,
+            "fileName": "flow"
         },
         {
             "Name": "Profile",
-            "definitions": [
-                {
-                    "query": "SELECT Id, Name FROM Profile",
-                    "isRestApi": true,
-                    "fileName": "profile"
-                }
-            ]
+            "query": "SELECT Id, Name FROM Profile",
+            "isRestApi": true,
+            "fileName": "profile"
         }
     ]
 }

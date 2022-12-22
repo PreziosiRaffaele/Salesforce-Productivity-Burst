@@ -2,9 +2,12 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { asyncQuery, isStandardField, getObjectFieldDeveloperName, isCustomMetadata, isPlatformEvent } from './Utils';
 import { Connection } from './Connection';
+import { downloadMetadata } from './GetDataFromOrg'
 const fs = require('fs');
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
+const { readFile } = require("fs/promises");
+import { cont } from './extension'
 
 export async function openOnSaleforce(){
     try{
@@ -91,7 +94,30 @@ export async function openOnSaleforce(){
             this.metadataApiName = pathParsed.base.substring(0, ((pathParsed.base.length - (extension.length + 1))))
         }
 
-        getUrl(){}
+        async getData(){
+            let jsonData;
+            let dataReloaded = false;
+            const metadataName = this.constructor.name;
+            const dataPath = vscode.Uri.file(path.join(cont.extensionPath, 'src', 'data.json'));
+            const confFile = await readFile(dataPath.fsPath);
+            const metadataConfig = JSON.parse(confFile).data.filter(data => data.Name == metadataName)[0];
+            const pathFile = `./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${metadataConfig.fileName}.json`;
+            try{
+                jsonData = await readFile(pathFile);
+            }catch{
+                await downloadMetadata(metadataName)
+                dataReloaded = true;
+                jsonData = await readFile(pathFile);
+            }
+            let data = JSON.parse(jsonData).filter(data => data.DeveloperName == this.metadataApiName)[0]
+            if(!data && !dataReloaded){
+                await downloadMetadata(metadataName)
+                jsonData = await readFile(pathFile);
+                data = JSON.parse(jsonData).filter(data => data.DeveloperName == this.metadataApiName)[0]
+            }
+
+            return data;
+        }
     }
 
     class SObject extends Metadata{
@@ -148,8 +174,8 @@ export async function openOnSaleforce(){
 
     class Flow extends Metadata{
         async getUrl(){
-          const queryResult = await asyncQuery(`SELECT LatestVersionId FROM FlowDefinition WHERE DeveloperName = '${this.metadataApiName}'`, true);
-          return `builder_platform_interaction/flowBuilder.app?flowId=${queryResult[0].LatestVersionId}`
+            const data = await this.getData();
+            return `lightning/setup/Flows/page?address=%2F${data.Id}`
         }
     }
 

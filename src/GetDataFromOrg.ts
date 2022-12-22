@@ -27,14 +27,12 @@ export function downloadMetadata(dataType){
         let promiseList = [];
         metadata.data.forEach(data => {
             if(!dataType || data.Name == dataType){
-                data.definitions.forEach(definition => {
-                    promiseList.push(new Promise<void>((resolve, reject) => {
-                        asyncQuery(definition.query, definition.isRestApi)
-                        .then((queryResult) => {
-                            createFile(`./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${definition.fileName}.json`, JSON.stringify(queryResult), () => resolve());
-                        })
-                    }))
-                })
+                promiseList.push(new Promise<void>((resolve, reject) => {
+                    asyncQuery(data.query, data.isRestApi)
+                    .then((queryResult) => {
+                        createFile(`./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${data.fileName}.json`, JSON.stringify(queryResult), () => resolve());
+                    })
+                }))
             }
         })
         return Promise.all(promiseList);
