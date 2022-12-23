@@ -1,5 +1,4 @@
-{
-    "data": [
+export let config = [
         {
             "Name": "Flow",
             "query": "SELECT Id, DeveloperName FROM FlowDefinition",
@@ -64,4 +63,3 @@
             "key": "ValidationName"
         }
     ]
-}

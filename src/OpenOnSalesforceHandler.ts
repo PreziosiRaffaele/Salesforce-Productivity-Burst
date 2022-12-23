@@ -3,11 +3,10 @@ import * as path from 'path';
 import { asyncQuery, isStandardField, getObjectFieldDeveloperName, isCustomMetadata, isPlatformEvent } from './Utils';
 import { Connection } from './Connection';
 import { downloadMetadata } from './GetDataFromOrg'
-const fs = require('fs');
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
 const { readFile } = require("fs/promises");
-import { cont } from './extension'
+import { config } from './configData';
 
 export async function openOnSaleforce(){
     try{
@@ -98,9 +97,7 @@ export async function openOnSaleforce(){
             let jsonData;
             let dataReloaded = false;
             const metadataName = this.constructor.name;
-            const dataPath = vscode.Uri.file(path.join(cont.extensionPath, 'src', 'data.json'));
-            const confFile = await readFile(dataPath.fsPath);
-            const metadataConfig = JSON.parse(confFile).data.filter(data => data.Name == metadataName)[0];
+            const metadataConfig = config.filter(data => data.Name == metadataName)[0];
             const pathFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${metadataConfig.fileName}.json`;
             try{
                 jsonData = await readFile(pathFile);
