@@ -89,5 +89,12 @@ export let config = [
             "isRestApi": true,
             "fileName": "field",
             "key": "DeveloperName"
+        },
+        {
+            "Name": "QuickAction",
+            "query": "select Id, DeveloperName from QuickActionDefinition",
+            "isRestApi": true,
+            "fileName": "quickAction",
+            "key": "DeveloperName"
         }
     ]

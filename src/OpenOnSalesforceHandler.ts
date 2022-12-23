@@ -77,6 +77,8 @@ export async function openOnSaleforce(){
                 metadata = new CustomMetadata(extension, pathParsed);
             }else if(extension === 'globalValueSet-meta.xml'){
                 metadata = new GlobalValueSet(extension, pathParsed);
+            }else if(extension === 'quickAction-meta.xml'){
+                metadata = new QuickAction(extension, pathParsed);
             }
 
             return metadata;
@@ -157,6 +159,20 @@ export async function openOnSaleforce(){
             return `lightning/setup/CustomMetadata/page?address=%2F${queryResult[0].Id}`
         }
     }
+
+    class QuickAction extends Metadata{
+        async getUrl(){
+            const splitObjectNameLayoutName = this.metadataApiName.split('.');
+            const objectName = splitObjectNameLayoutName[0];
+            const quickActionName = splitObjectNameLayoutName[1];
+            const [objectId, data] = await Promise.all([
+                this.getObjectId(objectName),
+                this.getData(this.constructor.name, quickActionName)
+            ]);
+            return `lightning/setup/ObjectManager/${objectId}/ButtonsLinksActions/${data[0].Id}/view`
+        }
+    }
+
 
     class PageLayout extends Metadata{
         async getUrl(){
