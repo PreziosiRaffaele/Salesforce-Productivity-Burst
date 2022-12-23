@@ -30,7 +30,7 @@ export function downloadMetadata(dataType){
                 promiseList.push(new Promise<void>((resolve, reject) => {
                     asyncQuery(data.query, data.isRestApi)
                     .then((queryResult) => {
-                        createFile(`./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${data.fileName}.json`, JSON.stringify(queryResult), () => resolve());
+                        createFile(`${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${data.fileName}.json`, JSON.stringify(queryResult), () => resolve());
                     })
                     .catch(err => {
                         reject(err)

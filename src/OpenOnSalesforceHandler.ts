@@ -101,7 +101,7 @@ export async function openOnSaleforce(){
             const dataPath = vscode.Uri.file(path.join(cont.extensionPath, 'src', 'data.json'));
             const confFile = await readFile(dataPath.fsPath);
             const metadataConfig = JSON.parse(confFile).data.filter(data => data.Name == metadataName)[0];
-            const pathFile = `./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${metadataConfig.fileName}.json`;
+            const pathFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${metadataConfig.fileName}.json`;
             try{
                 jsonData = await readFile(pathFile);
             }catch{
