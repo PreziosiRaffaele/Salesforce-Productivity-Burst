@@ -79,7 +79,7 @@ export function query(soql){
 export async function asyncQuery(soql, isRestApi){
     const restApiCommand = isRestApi ? '-t' : '';
     let query = `sfdx force:data:soql:query -q "${soql}" ${restApiCommand} -u "${Connection.getConnection().getUsername()}" --json`;
-    let queryResult = await execAsync(query);
+    let queryResult = await execAsync(query, {maxBuffer: undefined});
     return JSON.parse(queryResult.stdout)["result"].records;
 }
 

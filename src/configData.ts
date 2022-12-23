@@ -61,5 +61,33 @@ export let config = [
             "isRestApi": true,
             "fileName": "validationRule",
             "key": "ValidationName"
+        },
+        {
+            "Name": "Object",
+            "query": "Select Id,DeveloperName from CustomObject",
+            "isRestApi": true,
+            "fileName": "object",
+            "key": "DeveloperName"
+        },
+        {
+            "Name": "PageLayout",
+            "query": "SELECT Id, Name FROM Layout",
+            "isRestApi": true,
+            "fileName": "pageLayout",
+            "key": "Name"
+        },
+        {
+            "Name": "RecordType",
+            "query": "SELECT Id, DeveloperName FROM RecordType",
+            "isRestApi": false,
+            "fileName": "recordType",
+            "key": "DeveloperName"
+        },
+        {
+            "Name": "Field",
+            "query": "SELECT Id, DeveloperName, TableEnumOrId FROM CustomField",
+            "isRestApi": true,
+            "fileName": "field",
+            "key": "DeveloperName"
         }
     ]
