@@ -32,6 +32,9 @@ export function downloadMetadata(dataType){
                     .then((queryResult) => {
                         createFile(`./.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${data.fileName}.json`, JSON.stringify(queryResult), () => resolve());
                     })
+                    .catch(err => {
+                        reject(err)
+                    })
                 }))
             }
         })

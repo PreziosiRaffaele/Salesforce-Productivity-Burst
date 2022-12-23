@@ -109,14 +109,18 @@ export async function openOnSaleforce(){
                 dataReloaded = true;
                 jsonData = await readFile(pathFile);
             }
-            let data = JSON.parse(jsonData).filter(data => data.DeveloperName == this.metadataApiName)[0]
+            let data = JSON.parse(jsonData).filter(data => data[metadataConfig.key] == this.metadataApiName)[0]
             if(!data && !dataReloaded){
                 await downloadMetadata(metadataName)
                 jsonData = await readFile(pathFile);
-                data = JSON.parse(jsonData).filter(data => data.DeveloperName == this.metadataApiName)[0]
+                data = JSON.parse(jsonData).filter(data => data[metadataConfig.key] == this.metadataApiName)[0]
             }
 
             return data;
+        }
+
+        async getObjectId(){
+            //TODO GET OBJECT ID
         }
     }
 
@@ -135,8 +139,8 @@ export async function openOnSaleforce(){
 
     class GlobalValueSet extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id FROM GlobalValueSet WHERE DeveloperName  = '${this.metadataApiName}'`, true);
-            return `lightning/setup/Picklists/page?address=%2F${queryResult[0].Id}`
+            const data = await this.getData();
+            return `lightning/setup/Picklists/page?address=%2F${data.Id}`
         }
     }
 
@@ -181,50 +185,50 @@ export async function openOnSaleforce(){
 
     class ValidationRule extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id,EntityDefinitionId FROM ValidationRule WHERE ValidationName = '${this.metadataApiName}'`, true);
-            return `lightning/setup/ObjectManager/${queryResult[0].EntityDefinitionId}/ValidationRules/${queryResult[0].Id}/view`;
+            const data = await this.getData();
+            return `lightning/setup/ObjectManager/${data.EntityDefinitionId}/ValidationRules/${data.Id}/view`;
         }
     }
 
     class FlexiPage extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id FROM FlexiPage WHERE DeveloperName = '${this.metadataApiName}'`, true);
-            return `visualEditor/appBuilder.app?id=${queryResult[0].Id}`
+            const data = await this.getData();
+            return `visualEditor/appBuilder.app?id=${data.Id}`
         }
     }
 
     class Profile extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id FROM Profile WHERE Name = '${this.metadataApiName}'`, true);
-            return queryResult[0].Id
+            const data = await this.getData();
+            return `lightning/setup/EnhancedProfiles/page?address=%2F${data.Id}`
         }
     }
 
     class PermissionSet extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id FROM PermissionSet WHERE Name = '${this.metadataApiName}'`, true);
-            return queryResult[0].Id
+            const data = await this.getData();
+            return `lightning/setup/PermSets/page?address=%2F${data.Id}`
         }
     }
 
     class PermissionSetGroup extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id FROM PermissionSetGroup WHERE DeveloperName = '${this.metadataApiName}'`, true);
-            return queryResult[0].Id
+            const data = await this.getData();
+            return `lightning/setup/PermSetGroups/page?address=%2F${data.Id}`
         }
     }
 
     class ApexClass extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id FROM ApexClass WHERE Name = '${this.metadataApiName}'`, true);
-            return queryResult[0].Id
+            const data = await this.getData();
+            return `lightning/setup/ApexClasses/page?address=%2F${data.Id}`
         }
     }
 
     class ApexTrigger extends Metadata{
         async getUrl(){
-            const queryResult = await asyncQuery(`SELECT Id FROM ApexTrigger WHERE Name = '${this.metadataApiName}'`, true);
-            return queryResult[0].Id
+            const data = await this.getData();
+            return `lightning/setup/ApexTriggers/page?address=%2F${data.Id}`
         }
     }
 
