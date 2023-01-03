@@ -10,16 +10,16 @@ import { config } from './configData';
 
 export async function openOnSaleforce(){
     try{
-        const link = await vscode.window.withProgress(
+        await vscode.window.withProgress(
             {
                 title: 'SPB: Open On Salesforce',
                 location: vscode.ProgressLocation.Notification
             },
             () => openLink()
-            );
+        );
         }catch(error){
             console.log(error)
-            vscode.window.showInformationMessage('It cannot be opened on Salesforce');
+            vscode.window.showInformationMessage(error);
         }
     }
 
@@ -79,6 +79,8 @@ export async function openOnSaleforce(){
                 metadata = new GlobalValueSet(extension, pathParsed);
             }else if(extension === 'quickAction-meta.xml'){
                 metadata = new QuickAction(extension, pathParsed);
+            }else{
+                throw "Metadata not supported";
             }
 
             return metadata;
@@ -114,8 +116,11 @@ export async function openOnSaleforce(){
                 jsonData = await readFile(pathFile);
                 data = JSON.parse(jsonData).filter(data => data[metadataConfig.key] == key)
             }
-
-            return data;
+            if(!data){
+                throw "Metadata not found in the org";
+            }else{
+                return data;
+            }
         }
 
         async getObjectId(objectName){
@@ -273,6 +278,9 @@ export async function openOnSaleforce(){
                     this.getData(this.constructor.name, this.metadataApiName)
                 ]);
                 const fieldData = data.filter(field => field.TableEnumOrId == objectId)[0]
+                if(!fieldData){
+                    throw "Field not found in the org";
+                }
                 if(isCustomMetadata(objectFolderName)){
                     url = `lightning/setup/CustomMetadata/page?address=%2F${fieldData.Id}%3Fsetupid%3DCustomMetadata`;
                 }else if(isPlatformEvent(objectFolderName)){
