@@ -289,9 +289,9 @@ export async function openOnSaleforce(){
                 const objectId = await this.getObjectId(objectFolderName);
                 const fieldData = await this.getData(this.constructor.name, {'DeveloperName': this.metadataApiName, 'TableEnumOrId': objectId})
                 if(isCustomMetadata(objectFolderName)){
-                    url = `lightning/setup/CustomMetadata/page?address=%2F${fieldData.Id}%3Fsetupid%3DCustomMetadata`;
+                    url = `lightning/setup/CustomMetadata/page?address=%2F${fieldData[0].Id}%3Fsetupid%3DCustomMetadata`;
                 }else if(isPlatformEvent(objectFolderName)){
-                    url = `lightning/setup/EventObjects/page?address=%2F${fieldData.Id}%3Fsetupid%3DEventObjects`;
+                    url = `lightning/setup/EventObjects/page?address=%2F${fieldData[0].Id}%3Fsetupid%3DEventObjects`;
                 }else{
                     url = `lightning/setup/ObjectManager/${objectId}/FieldsAndRelationships/${fieldData[0].Id}/view`;
                 }
