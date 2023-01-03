@@ -111,12 +111,12 @@ export async function openOnSaleforce(){
                 jsonData = await readFile(pathFile);
             }
             let data = JSON.parse(jsonData).filter(data => data[metadataConfig.key] == key)
-            if(!data && !dataReloaded){
+            if(data.length == 0 && !dataReloaded){
                 await downloadMetadata(metadataName)
                 jsonData = await readFile(pathFile);
                 data = JSON.parse(jsonData).filter(data => data[metadataConfig.key] == key)
             }
-            if(!data){
+            if(data.length == 0){
                 throw "Metadata not found in the org";
             }else{
                 return data;
