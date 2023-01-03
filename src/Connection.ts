@@ -72,7 +72,7 @@ export class Connection {
             const jsonConfig = JSON.parse(bodyConfig);
             return jsonConfig["defaultusername"];
         } catch (error) {
-            vscode.window.showInformationMessage('You are not connected to any Salesforce org');
+            vscode.window.showInformationMessage('SPB: You are not connected to any Salesforce org');
         }
     }
 
