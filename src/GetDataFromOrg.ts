@@ -1,7 +1,8 @@
 import { Connection } from './Connection';
-import { asyncQuery, createFile } from './Utils';
+import { asyncQuery, createFile, isStandardObject, getObjectFieldDeveloperName } from './Utils';
 import * as vscode from 'vscode';
 import { config } from './configData';
+const { readFile } = require("fs/promises");
 
 export async function refreshMetadata() {
     try {
@@ -34,4 +35,53 @@ export function downloadMetadata(dataType){
         }
     })
     return Promise.all(promiseList);
+}
+
+export async function getData(metadataName, filters){
+    let jsonData;
+    let dataReloaded = false;
+    const metadataConfig = config.filter(data => data.Name == metadataName)[0];
+    const pathFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${metadataConfig.fileName}.json`;
+    try{
+        jsonData = await readFile(pathFile);
+    }catch{
+        await downloadMetadata(metadataName)
+        dataReloaded = true;
+        jsonData = await readFile(pathFile);
+    }
+    let data = JSON.parse(jsonData).filter(data => {
+        for (let key in filters) {
+            if (data[key] != filters[key]) {
+                return false;
+            }
+        }
+        return true;
+    })
+    if(data.length == 0 && !dataReloaded){
+        await downloadMetadata(metadataName)
+        jsonData = await readFile(pathFile);
+        data = JSON.parse(jsonData).filter(data => {
+            for (let key in filters) {
+                if (data[key] != filters[key]) {
+                    return false;
+                }
+            }
+            return true;
+        })
+    }
+    if(data.length == 0){
+        throw "Metadata not found in the org";
+    }else{
+        return data;
+    }
+}
+
+export async function getObjectId(objectName){
+    if (isStandardObject(objectName)) {
+        return objectName;
+    } else {
+        let objectDeveloperName = getObjectFieldDeveloperName(objectName);
+        const objectData = await getData('Object', {'DeveloperName': objectDeveloperName})
+        return objectData[0].Id
+    }
 }

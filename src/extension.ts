@@ -6,7 +6,6 @@ import { createButtonLinkSF } from './StatusBar';
 import { Connection } from './Connection';
 import { refreshMetadata } from './GetDataFromOrg';
 import { openOnSaleforce }from './OpenOnSalesforceHandler';
-export let cont;
 
 export function activate(context: vscode.ExtensionContext) {
   console.time('SPB Activation time');
@@ -39,7 +38,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   createButtonLinkSF();
 
-  cont = context;
   console.log("Salesforce Productivity Burst Activated")
   console.timeEnd('SPB Activation time');
 }

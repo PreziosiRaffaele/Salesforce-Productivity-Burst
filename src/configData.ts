@@ -1,3 +1,5 @@
+import { Connection } from "./Connection";
+
 export let config = [
         {
             "Name": "Flow",
@@ -82,5 +84,17 @@ export let config = [
             "query": "select Id, DeveloperName from QuickActionDefinition",
             "isRestApi": true,
             "fileName": "quickAction"
-        }
+        },
+        {
+            "Name": "User",
+            "query": `SELECT Id,Name,Username FROM User WHERE Name IN ('Platform Integration User', 'Automated Process') OR Username = '${Connection.getConnection().getUsername()}'`,
+            "isRestApi": true,
+            "fileName": "user"
+        },
+        {
+            "Name": "DebugLevel",
+            "query": "SELECT Id,DeveloperName FROM DebugLevel",
+            "isRestApi": true,
+            "fileName": "debugLevel"
+        },
     ]

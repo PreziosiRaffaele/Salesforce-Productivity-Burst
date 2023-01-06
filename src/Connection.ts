@@ -1,16 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { asyncQuery } from './Utils';
 import { resetStatusBar } from './StatusBar';
 const execSync = require('child_process').execSync;
 export class Connection {
     private orgName;
     private userName;
-    private userId;
-    private debugLevels;
-    private automatedProcessUserId;
-    private platformIntegrationUserId;
     private instanceUrl;
     public mapNameClass_MapMethodName_Coverage;
     public mapNameClass_TotalCoverage;
@@ -73,41 +68,6 @@ export class Connection {
             return jsonConfig["defaultusername"];
         } catch (error) {
             vscode.window.showInformationMessage('SPB: You are not connected to any Salesforce org');
-        }
-    }
-
-    public async getUserId() {
-        if (!this.userId) {
-            const user = await asyncQuery(`SELECT Id FROM User WHERE Username = '${this.userName}' LIMIT 1`, true);
-            this.userId = user[0].Id
-        }
-        return this.userId;
-    }
-
-    public async getAutomatedProcessUserId() {
-        if (!this.automatedProcessUserId) {
-            const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Automated Process' LIMIT 1`, true);
-            this.automatedProcessUserId = user[0].Id
-        }
-        return this.automatedProcessUserId;
-    }
-
-    public async getPlatformIntegrationUserId() {
-        if (!this.platformIntegrationUserId) {
-            const user = await asyncQuery(`SELECT Id FROM User WHERE Name = 'Platform Integration User' LIMIT 1`, true);
-            this.platformIntegrationUserId = user[0].Id
-        }
-        return this.platformIntegrationUserId;
-    }
-
-    public async getDebugLevels() {
-        if (!this.debugLevels) {
-            this.debugLevels = await asyncQuery('SELECT Id,DeveloperName FROM Debuglevel', true);
-        }
-        if (this.debugLevels.length > 0) {
-            return this.debugLevels;
-        } else {
-            throw 'Retrivered Debug Levels failed';
         }
     }
 

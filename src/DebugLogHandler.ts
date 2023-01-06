@@ -1,6 +1,7 @@
 import { asyncQuery, deleteRecord, createRecord, deleteRecords } from './Utils';
 import { Connection } from './Connection';
 import { showTraceFlagStatus, hideTraceFlagStatus } from './StatusBar';
+import { getData } from './GetDataFromOrg'
 import * as vscode from 'vscode';
 const LOG_TIMER_LENGTH_MINUTES = 60;
 const MILLISECONDS_PER_MINUTE = 60000;
@@ -13,7 +14,7 @@ export async function enableDebugLog() {
                 title: 'SPB: Get Debug Levels',
                 location: vscode.ProgressLocation.Notification
             },
-            () => Connection.getConnection().getDebugLevels()
+            () => getData('DebugLevel', {})
         )]).then((values) => {
             let tracedEntityType = values[0];
             if(Array.isArray(values[1])){
@@ -57,15 +58,15 @@ async function createTraceFlag(tracedEntityType, debugLevel) {
 }
 
 async function getTraceEntityId(tracedEntityType) {
-    let tracedEntityTypeId;
+    let tracedEntity;
     if (tracedEntityType === 'User') {
-        tracedEntityTypeId = await Connection.getConnection().getUserId();
+        tracedEntity = await getData('User', {'Username': `${Connection.getConnection().getUsername()}`});
     } else if (tracedEntityType === 'Automated Process') {
-        tracedEntityTypeId = await Connection.getConnection().getAutomatedProcessUserId();
+        tracedEntity = await getData('User', {'Name': 'Automated Process'});
     } else {
-        tracedEntityTypeId = await Connection.getConnection().getPlatformIntegrationUserId();
+        tracedEntity = await getData('User', {'Name': 'Platform Integration User'});
     }
-    return tracedEntityTypeId;
+    return tracedEntity[0].Id;
 }
 
 export async function deleteActiveTraceFlag(TracedEntitySfId) {
