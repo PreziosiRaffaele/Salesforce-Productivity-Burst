@@ -16,10 +16,11 @@
 
 ## Quick opening metadata in SFDC from xml files.
 - **Instructions:**
-  1. Open xml file in the repository
-  2. Click search icon in the status bar
+  1. Run the command SPB:Refresh Metadata (It will cache all the necessary data)
+  2. Open a supported metadata in VSCode
+  3. Click search icon in the status bar
 
-> *Supported Metadata: flow, field, validation Rule, flexi page, profile, permission set, permission set group, class, trigger, recordtype, layout*
+> *Supported Metadata: flow, field, validation Rule, quickAction, flexi page, profile, permission set, permission set group, class, trigger, recordtype, layout*
 
 ![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/ApexGetCoverage/d8e63d0657931efd5bebc1967adf3679beb87cd0/OpenOnSalesForceDemo.gif)
 
