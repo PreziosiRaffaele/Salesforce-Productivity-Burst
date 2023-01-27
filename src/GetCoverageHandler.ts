@@ -1,7 +1,5 @@
 
 import { Connection } from './Connection';
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
 import { asyncQuery, isInvalidFile, getCurrentClassName, highlightCoverage, cleanCoverage } from './Utils';
 import * as vscode from 'vscode';
 const REFRESH_DATA = 'Refresh Data';
