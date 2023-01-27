@@ -12,7 +12,7 @@
 
 > *Tip: disable retrieve-test-code-coverage from settings to speed up your test.*
 
-![Recording of Apex Get Coverage](https://github.com/PreziosiRaffaele/ApexGetCoverage/blob/main/demo.gif?raw=true)
+![Recording of Apex Get Coverage](https://raw.githubusercontent.com/PreziosiRaffaele/SalesforceProductivityBurst/master/demo.gif)
 
 ## Quick opening metadata in SFDC from xml files.
 - **Instructions:**
@@ -22,7 +22,7 @@
 
 > *Supported Metadata: flow, field, validation Rule, quickAction, flexi page, profile, permission set, permission set group, class, trigger, recordtype, layout*
 
-![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/ApexGetCoverage/d8e63d0657931efd5bebc1967adf3679beb87cd0/OpenOnSalesForceDemo.gif)
+![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/SalesforceProductivityBurst/master/OpenOnSalesForceDemo.gif)
 
 ## Quick activating of debug logging for your User, Automated Process, Integration Platform User.
 - **Instructions:**
@@ -33,4 +33,4 @@
 
 > *Other commands: Disable Active trace flag, Delete all Apex Logs*
 
-![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/ApexGetCoverage/main/createTraceFlagDemo.gif)
+![Recording of create trace flag](https://github.com/PreziosiRaffaele/SalesforceProductivityBurst/blob/master/createTraceFlagDemo.gif?raw=true)
