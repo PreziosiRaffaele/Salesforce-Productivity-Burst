@@ -77,6 +77,8 @@ export async function openOnSaleforce(){
                 metadata = new GlobalValueSet(extension, pathParsed);
             }else if(extension === 'quickAction-meta.xml'){
                 metadata = new QuickAction(extension, pathParsed);
+            }else if(extension === 'approvalProcess-meta.xml'){
+                metadata = new ApprovalProcess(extension, pathParsed);
             }else{
                 throw "Metadata not supported";
             }
@@ -94,6 +96,13 @@ export async function openOnSaleforce(){
             this.extension = extension;
             this.pathParsed = pathParsed;
             this.metadataApiName = pathParsed.base.substring(0, ((pathParsed.base.length - (extension.length + 1))))
+        }
+    }
+
+    class ApprovalProcess extends Metadata{
+        async getUrl(){
+            const data = await getData(this.constructor.name, {'DeveloperName': this.metadataApiName.split('.')[1]});
+            return `/lightning/setup/ApprovalProcesses/page?address=%2F${data[0].Id}`
         }
     }
 

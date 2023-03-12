@@ -97,4 +97,10 @@ export let config = [
             "isRestApi": true,
             "fileName": "debugLevel"
         },
+        {
+            "Name": "ApprovalProcess",
+            "query": "SELECT Id,DeveloperName FROM ProcessDefinition WHERE Type = 'Approval'",
+            "isRestApi": false,
+            "fileName": "approvalProcess"
+        }
     ]
