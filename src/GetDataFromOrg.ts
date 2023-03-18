@@ -1,17 +1,18 @@
-import { Connection } from './Connection';
-import { asyncQuery, createFile, isStandardObject, getObjectFieldDeveloperName } from './Utils';
+import { createFile, isStandardObject, getObjectFieldDeveloperName } from './Utils';
 import * as vscode from 'vscode';
 import { config } from './configData';
 const { readFile } = require("fs/promises");
+const util = require('util');
+const execAsync = util.promisify(require('child_process').exec);
 
-export async function refreshMetadata() {
+export async function refreshMetadata(conn) {
     try {
         await vscode.window.withProgress(
             {
-            title: 'SPB: Get Data From Org',
-            location: vscode.ProgressLocation.Notification
+                title: 'SPB: Get Data From Org',
+                location: vscode.ProgressLocation.Notification
             },
-            () => downloadMetadata('')
+            () => downloadMetadata(conn, '')
         );
     } catch (error) {
         console.log(error)
@@ -19,14 +20,15 @@ export async function refreshMetadata() {
     }
 }
 
-export function downloadMetadata(dataType){
+export async function downloadMetadata(conn, dataType){
     let promiseList = [];
-    config.forEach(data => {
+    const configs = await config(conn);
+    configs.forEach(data => {
         if(!dataType || data.Name == dataType){
             promiseList.push(new Promise<void>((resolve, reject) => {
-                asyncQuery(data.query, data.isRestApi)
+                conn.query(data.query, data.isRestApi)
                 .then((queryResult) => {
-                    createFile(`${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${data.fileName}.json`, JSON.stringify(queryResult), () => resolve());
+                    createFile(`${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${conn.getOrgAlias()}/${data.fileName}.json`, JSON.stringify(queryResult), () => resolve());
                 })
                 .catch(err => {
                     reject(err)
@@ -37,15 +39,16 @@ export function downloadMetadata(dataType){
     return Promise.all(promiseList);
 }
 
-export async function getData(metadataName, filters){
+export async function filterData(conn, metadataName, filters){
     let jsonData;
     let dataReloaded = false;
-    const metadataConfig = config.filter(data => data.Name == metadataName)[0];
-    const pathFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${Connection.getConnection().getOrgName()}/${metadataConfig.fileName}.json`;
+    const configs = await config(conn);
+    const metadataConfig = configs.find(data => data.Name == metadataName);
+    const pathFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${conn.getOrgAlias()}/${metadataConfig.fileName}.json`;
     try{
         jsonData = await readFile(pathFile);
     }catch{
-        await downloadMetadata(metadataName)
+        await downloadMetadata(conn, metadataName);
         dataReloaded = true;
         jsonData = await readFile(pathFile);
     }
@@ -58,7 +61,7 @@ export async function getData(metadataName, filters){
         return true;
     })
     if(data.length == 0 && !dataReloaded){
-        await downloadMetadata(metadataName)
+        await downloadMetadata(conn, metadataName);
         jsonData = await readFile(pathFile);
         data = JSON.parse(jsonData).filter(data => {
             for (let key in filters) {
@@ -76,12 +79,97 @@ export async function getData(metadataName, filters){
     }
 }
 
-export async function getObjectId(objectName){
+export async function findData(conn, metadataName, filters){
+    let jsonData;
+    let dataReloaded = false;
+    const configs = await config(conn);
+    const metadataConfig = configs.find(data => data.Name == metadataName);
+    const pathFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/${conn.getOrgAlias()}/${metadataConfig.fileName}.json`;
+    try{
+        jsonData = await readFile(pathFile);
+    }catch{
+        await downloadMetadata(conn, metadataName)
+        dataReloaded = true;
+        jsonData = await readFile(pathFile);
+    }
+    let data = JSON.parse(jsonData).find(data => {
+        for (let key in filters) {
+            if (data[key] != filters[key]) {
+                return false;
+            }
+        }
+        return true;
+    })
+    if(!data && !dataReloaded){
+        await downloadMetadata(conn, metadataName)
+        jsonData = await readFile(pathFile);
+        data = JSON.parse(jsonData).find(data => {
+            for (let key in filters) {
+                if (data[key] != filters[key]) {
+                    return false;
+                }
+            }
+            return true;
+        })
+    }
+    if(!data){
+        throw "Metadata not found in the org";
+    }else{
+        return data;
+    }
+}
+
+export async function getObjectId(conn, objectName){
     if (isStandardObject(objectName)) {
         return objectName;
     } else {
         let objectDeveloperName = getObjectFieldDeveloperName(objectName);
-        const objectData = await getData('Object', {'DeveloperName': objectDeveloperName})
-        return objectData[0].Id
+        const objectData = await findData(conn, 'Object', {'DeveloperName': objectDeveloperName})
+        return objectData.Id
     }
+}
+
+export async function getOrgDetails(orgName){
+    const pathFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}/.sfdx/tools/SPB/orgDetails.json`;
+    let orgsDetails;
+    let dataReloaded = false;
+    try{
+        orgsDetails = await readFile(pathFile);
+    }catch{
+        await downloadOrgDetails(pathFile);
+        orgsDetails = await readFile(pathFile);
+        dataReloaded = true;
+    }
+
+    let orgdetail = JSON.parse(orgsDetails).find((org) => {
+        if(org.alias){
+            return org.alias.split(',').includes(orgName);
+        }
+        return false;
+    });
+
+    if(!orgdetail && !dataReloaded){
+        await downloadOrgDetails(pathFile);
+        orgdetail = JSON.parse(orgsDetails).find((org) => {
+            if(org.alias){
+                return org.alias.split(',').includes(orgName);
+            }
+            return false;
+        });
+    }
+
+    return orgdetail;
+}
+
+function downloadOrgDetails(pathFile){
+    return new Promise<void>((resolve, reject) => {
+        execAsync('sfdx force:auth:list --json')
+            .then((results) => {
+                const orglist = JSON.parse(results.stdout)["result"].map(({alias, username, instanceUrl}) => {
+                    return {alias, username, instanceUrl};
+                });
+                createFile(pathFile, JSON.stringify(orglist), () => resolve());
+            })
+        }
+    )
 }
