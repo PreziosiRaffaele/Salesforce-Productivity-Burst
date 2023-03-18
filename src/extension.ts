@@ -10,30 +10,64 @@ import { openOnSaleforce }from './OpenOnSalesforceHandler';
 export function activate(context: vscode.ExtensionContext) {
   console.time('SPB Activation time');
 
-  Connection.getConnection();
-
   context.subscriptions.push(vscode.commands.registerCommand('extension.getCoverage', () => {
-    getCoverage();
+    Connection.getConnection()
+        .then((conn) => {
+            getCoverage(conn);
+        })
+        .catch((err) => {
+            vscode.window.showInformationMessage(err);
+        })
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.refreshMetadata', () => {
-    refreshMetadata();
+    Connection.getConnection()
+    .then((conn) => {
+        refreshMetadata(conn);
+    })
+    .catch((err) => {
+        vscode.window.showInformationMessage(err);
+    })
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.createTraceFlag', () => {
-    enableDebugLog();
+    Connection.getConnection()
+    .then((conn) => {
+        enableDebugLog(conn);
+    })
+    .catch((err) => {
+        vscode.window.showInformationMessage(err);
+    })
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.deleteActiveTraceFlag', () => {
-    disableDebugLog();
+    Connection.getConnection()
+    .then((conn) => {
+        disableDebugLog(conn);
+    })
+    .catch((err) => {
+        vscode.window.showInformationMessage(err);
+    })
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.deleteApexLogs', () => {
-    deleteApexLogs();
+    Connection.getConnection()
+    .then((conn) => {
+        deleteApexLogs(conn);
+    })
+    .catch((err) => {
+        vscode.window.showInformationMessage(err);
+    })
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('extension.openOnSaleforce', () => {
-    openOnSaleforce();
+    Connection.getConnection()
+    .then((conn) => {
+        openOnSaleforce(conn);
+    })
+    .catch((err) => {
+        vscode.window.showInformationMessage(err);
+    })
   }));
 
   createButtonLinkSF();
