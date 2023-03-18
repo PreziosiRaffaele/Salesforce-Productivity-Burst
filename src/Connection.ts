@@ -1,86 +1,112 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { getOrgDetails } from './GetDataFromOrg';
 import { resetStatusBar } from './StatusBar';
-const execSync = require('child_process').execSync;
+const fs = require('fs/promises');
+const util = require('util');
+const execAsync = util.promisify(require('child_process').exec);
+const writeFile = util.promisify(fs.writeFile);
+
 export class Connection {
-    private orgName;
-    private userName;
-    private instanceUrl;
+    private orgAlias;
+    private orgDetail;
     public mapNameClass_MapMethodName_Coverage;
     public mapNameClass_TotalCoverage;
 
     private static instance;
-    private static accessOrgs;
 
-    private constructor(orgName) {
-        this.orgName = orgName;
-        let accessOrg = Connection.getAccessOrg(orgName);
-        this.userName = accessOrg["username"];
-        this.instanceUrl = accessOrg["instanceUrl"];
-        resetStatusBar();
+    public constructor(orgAlias) {
+        this.orgAlias = orgAlias;
         this.mapNameClass_MapMethodName_Coverage = new Map();
         this.mapNameClass_TotalCoverage = new Map();
+        resetStatusBar();
     }
 
-    private static getAccessOrg(orgName) {
-        let accessOrg;
-        if (Connection.accessOrgs) {
-            accessOrg = Connection.findAccessOrg(orgName);
-            if (!accessOrg) {
-                Connection.setAccessOrg();
-                accessOrg = Connection.findAccessOrg(orgName);
-            }
-        } else {
-            Connection.setAccessOrg();
-            accessOrg = Connection.findAccessOrg(orgName);
-        }
-        return accessOrg;
-    }
-
-    private static setAccessOrg() {
-        let response = execSync('sfdx force:auth:list --json');
-        Connection.accessOrgs = JSON.parse(response.toString())["result"];
-    }
-
-    private static findAccessOrg(orgName) {
-        return Connection.accessOrgs.find(accessOrg => {
-            if (accessOrg.alias) {
-                return accessOrg.alias.split(',').includes(orgName);
-            }
-            return false;
-        })
-    }
-
-    public static getConnection() {
-        let connectedOrg = Connection.getConnectedOrg();
-        if (!this.instance || (connectedOrg != this.instance.getOrgName())) {
+    public static async getConnection() {
+        let connectedOrg = await Connection.getConnectedOrg();
+        if (!this.instance || (connectedOrg != this.instance.getOrgAlias())) {
             this.instance = new Connection(connectedOrg);
         }
         return this.instance;
     }
 
-    private static getConnectedOrg() {
+    private static async getConnectedOrg() {
         try {
+            let connectedOrg;
             const sfdxConfigPath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '/.sfdx', 'sfdx-config.json');
-            const bodyConfig = fs.readFileSync(sfdxConfigPath, 'utf-8');
-            const jsonConfig = JSON.parse(bodyConfig);
-            return jsonConfig["defaultusername"];
+            const configFile = await fs.readFile(sfdxConfigPath, 'utf-8');
+            connectedOrg = JSON.parse(configFile)["defaultusername"];
+            return connectedOrg;
         } catch (error) {
-            vscode.window.showInformationMessage('SPB: You are not connected to any Salesforce org');
+            throw 'SPB: You are not connected to any Salesforce org';
         }
     }
 
-    public getUsername() {
-        return this.userName;
+    public getOrgAlias() {
+        return this.orgAlias;
     }
 
-    public getOrgName() {
-        return this.orgName;
+    public async getInstanceUrl() {
+        if(!this.orgDetail){
+            this.orgDetail = await getOrgDetails(this.getOrgAlias());
+        }
+        return this.orgDetail['instanceUrl'];
     }
 
-    public getInstanceUrl() {
-        return this.instanceUrl;
+    public async getUserName() {
+        if(!this.orgDetail){
+            this.orgDetail = await getOrgDetails(this.getOrgAlias());
+        }
+        return this.orgDetail['username'];
+    }
+
+    public async query(soql, isRestApi){
+        const restApiCommand = isRestApi ? '-t' : '';
+        let query = `sfdx force:data:soql:query -q "${soql}" ${restApiCommand} -u "${this.getOrgAlias()}" --json`;
+        let queryResult = await execAsync(query, {maxBuffer: undefined});
+        return JSON.parse(queryResult.stdout)["result"].records;
+    }
+
+
+    public async deleteRecords(SObjects){
+        if(!SObjects || SObjects.length === 0) return;
+        const objType = SObjects[0].attributes.type;
+        const setIds = new Set(SObjects.map(object => object.Id));
+        let csv = 'Id' + '\n';
+        setIds.forEach(id => csv += id + '\n');
+        const filePath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'tempDelete.csv');
+        await writeFile(filePath, csv);
+        await execAsync(`sfdx force:data:bulk:delete -s ${objType} -f ${filePath} -u "${this.getOrgAlias()}"`);
+    }
+
+    public async deleteRecord(SObject){
+        const objType = SObject.attributes.type;
+        await execAsync(`sfdx force:data:record:delete -t -s${objType} -i ${SObject.Id} -u "${this.getOrgAlias()}"`);
+    }
+
+    public async createRecord(objType, SObject){
+        let values = '';
+        for (let key in SObject) {
+            values += (key + '=' + SObject[key] + ' ');
+        }
+        await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${this.getOrgAlias()}"`);
+    }
+
+    public async upsertRecord(objType, SObject){
+        let values = '';
+        let id;
+        for (let key in SObject) {
+            if(key != "Id"){
+                values += (key + '=' + SObject[key] + ' ');
+            }else{
+                id = SObject[key];
+            }
+        }
+        if(!id){
+            await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${this.getOrgAlias()}"`);
+        }else{
+            await execAsync(`sfdx force:data:record:update -t -s${objType} -i ${id} -v "${values}" -u "${this.getOrgAlias()}"`);
+        }
     }
 }
 

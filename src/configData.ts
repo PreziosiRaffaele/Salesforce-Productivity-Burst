@@ -1,6 +1,6 @@
-import { Connection } from "./Connection";
-
-export let config = [
+export async function config(conn){
+    const userName = await conn.getUserName();
+    return [
         {
             "Name": "Flow",
             "query": "SELECT Id, DeveloperName FROM FlowDefinition",
@@ -87,7 +87,7 @@ export let config = [
         },
         {
             "Name": "User",
-            "query": `SELECT Id,Name,Username FROM User WHERE Name IN ('Platform Integration User', 'Automated Process') OR Username = '${Connection.getConnection().getUsername()}'`,
+            "query": `SELECT Id,Name,Username FROM User WHERE Name IN ('Platform Integration User', 'Automated Process') OR Username = '${userName}'`,
             "isRestApi": true,
             "fileName": "user"
         },
@@ -97,4 +97,11 @@ export let config = [
             "isRestApi": true,
             "fileName": "debugLevel"
         },
+        {
+            "Name": "ApprovalProcess",
+            "query": "SELECT Id,DeveloperName FROM ProcessDefinition WHERE Type = 'Approval'",
+            "isRestApi": false,
+            "fileName": "approvalProcess"
+        }
     ]
+}

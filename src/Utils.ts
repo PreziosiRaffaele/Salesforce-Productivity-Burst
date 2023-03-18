@@ -1,12 +1,8 @@
 const fs = require('fs')
-const execSync = require('child_process').execSync;
 const util = require('util');
-const execAsync = util.promisify(require('child_process').exec);
-const writeFile = util.promisify(fs.writeFile);
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {getDecorationForCoveredLines, getDecorationForUncoveredLines} from './Decorations';
-import { Connection } from './Connection';
 var getDirName = require('path').dirname;
 let decorationTypeCoveredLine;
 let decorationTypeUncoveredLine;
@@ -67,60 +63,6 @@ export function cleanCoverage(openedClass){
     if(decorationTypeCoveredLine != null && decorationTypeUncoveredLine != null){
         openedClass.setDecorations(decorationTypeCoveredLine, []);
         openedClass.setDecorations(decorationTypeUncoveredLine, []);
-    }
-}
-
-export function query(soql){
-    let query = `sfdx force:data:soql:query -q "${soql}" -t -u "${Connection.getConnection().getUsername()}" --json`;
-    let queryResult = execSync(query);
-    return JSON.parse(queryResult.toString())["result"].records;
-}
-
-export async function asyncQuery(soql, isRestApi){
-    const restApiCommand = isRestApi ? '-t' : '';
-    let query = `sfdx force:data:soql:query -q "${soql}" ${restApiCommand} -u "${Connection.getConnection().getUsername()}" --json`;
-    let queryResult = await execAsync(query, {maxBuffer: undefined});
-    return JSON.parse(queryResult.stdout)["result"].records;
-}
-
-export async function deleteRecords(SObjects){
-    if(!SObjects || SObjects.length === 0) return;
-    const objType = SObjects[0].attributes.type;
-    const setIds = new Set(SObjects.map(object => object.Id));
-    let csv = 'Id' + '\n';
-    setIds.forEach(id => csv += id + '\n');
-    const filePath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'tempDelete.csv');
-    await writeFile(filePath, csv);
-    await execAsync(`sfdx force:data:bulk:delete -s ${objType} -f ${filePath} -u "${Connection.getConnection().getUsername()}"`);
-}
-
-export async function deleteRecord(SObject){
-    const objType = SObject.attributes.type;
-    await execAsync(`sfdx force:data:record:delete -t -s${objType} -i ${SObject.Id} -u "${Connection.getConnection().getUsername()}"`);
-}
-
-export async function createRecord(objType, SObject){
-    let values = '';
-    for (let key in SObject) {
-        values += (key + '=' + SObject[key] + ' ');
-    }
-    await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
-}
-
-export async function upsertRecord(objType, SObject){
-    let values = '';
-    let id;
-    for (let key in SObject) {
-        if(key != "Id"){
-            values += (key + '=' + SObject[key] + ' ');
-        }else{
-            id = SObject[key];
-        }
-    }
-    if(!id){
-        await execAsync(`sfdx force:data:record:create -t -s${objType} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
-    }else{
-        await execAsync(`sfdx force:data:record:update -t -s${objType} -i ${id} -v "${values}" -u "${Connection.getConnection().getUsername()}"`);
     }
 }
 

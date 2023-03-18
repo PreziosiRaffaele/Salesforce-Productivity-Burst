@@ -1,20 +1,18 @@
-import { asyncQuery, deleteRecord, createRecord, deleteRecords } from './Utils';
-import { Connection } from './Connection';
 import { showTraceFlagStatus, hideTraceFlagStatus } from './StatusBar';
-import { getData } from './GetDataFromOrg'
+import { findData, filterData } from './GetDataFromOrg'
 import * as vscode from 'vscode';
 const LOG_TIMER_LENGTH_MINUTES = 60;
 const MILLISECONDS_PER_MINUTE = 60000;
 const TRACED_ENTITY_TYPES = ['User', 'Automated Process', 'Platform Integration User'];
 
-export async function enableDebugLog() {
+export async function enableDebugLog(conn) {
     try {
         Promise.all([vscode.window.showQuickPick(TRACED_ENTITY_TYPES, { placeHolder: 'Select Traced Entity Type' }), vscode.window.withProgress(
             {
                 title: 'SPB: Get Debug Levels',
                 location: vscode.ProgressLocation.Notification
             },
-            () => getData('DebugLevel', {})
+            () => filterData(conn, 'DebugLevel', {})
         )]).then((values) => {
             let tracedEntityType = values[0];
             if(Array.isArray(values[1])){
@@ -26,7 +24,7 @@ export async function enableDebugLog() {
                                 title: 'SPB: Create Trace Flag',
                                 location: vscode.ProgressLocation.Notification
                             },
-                            () => createTraceFlag(tracedEntityType, debuglevels.find(debuglevel => debuglevel["DeveloperName"] == debugLevelSelected))
+                            () => createTraceFlag(conn, tracedEntityType, debuglevels.find(debuglevel => debuglevel["DeveloperName"] == debugLevelSelected))
                         );
                     }
                 })
@@ -38,10 +36,10 @@ export async function enableDebugLog() {
     }
 }
 
-async function createTraceFlag(tracedEntityType, debugLevel) {
-    const TracedEntitySfId = await getTraceEntityId(tracedEntityType);
+async function createTraceFlag(conn, tracedEntityType, debugLevel) {
+    const TracedEntitySfId = await getTraceEntityId(conn, tracedEntityType);
 
-    await deleteActiveTraceFlag(TracedEntitySfId);
+    await deleteActiveTraceFlag(conn, TracedEntitySfId);
     let expirationDate = new Date(
         Date.now() + LOG_TIMER_LENGTH_MINUTES * MILLISECONDS_PER_MINUTE
     );
@@ -53,32 +51,33 @@ async function createTraceFlag(tracedEntityType, debugLevel) {
         logtype: 'USER_DEBUG',
         ExpirationDate: expirationDate.toISOString()
     }
-    await createRecord('TraceFlag', newTraceFlag);
+    await conn.createRecord('TraceFlag', newTraceFlag);
     showTraceFlagStatus(tracedEntityType, newTraceFlag.ExpirationDate);
 }
 
-async function getTraceEntityId(tracedEntityType) {
+async function getTraceEntityId(conn, tracedEntityType) {
     let tracedEntity;
     if (tracedEntityType === 'User') {
-        tracedEntity = await getData('User', {'Username': `${Connection.getConnection().getUsername()}`});
+        const userName = await conn.getUserName();
+        tracedEntity = await findData(conn, 'User', {'Username': `${userName}`});
     } else if (tracedEntityType === 'Automated Process') {
-        tracedEntity = await getData('User', {'Name': 'Automated Process'});
+        tracedEntity = await findData(conn, 'User', {'Name': 'Automated Process'});
     } else {
-        tracedEntity = await getData('User', {'Name': 'Platform Integration User'});
+        tracedEntity = await findData(conn, 'User', {'Name': 'Platform Integration User'});
     }
-    return tracedEntity[0].Id;
+    return tracedEntity.Id;
 }
 
-export async function deleteActiveTraceFlag(TracedEntitySfId) {
-    const currentTraceFlag = await getActiveTraceFlag(TracedEntitySfId);
+export async function deleteActiveTraceFlag(conn, TracedEntitySfId) {
+    const currentTraceFlag = await getActiveTraceFlag(conn, TracedEntitySfId);
     if (currentTraceFlag) {
-        await deleteRecord(currentTraceFlag);
+        await conn.deleteRecord(currentTraceFlag);
     }
 }
 
-async function getActiveTraceFlag(TracedEntitySfId) {
+async function getActiveTraceFlag(conn, TracedEntitySfId) {
     const NOW = new Date(Date.now()).toISOString();
-    const traceFlags = await asyncQuery(`SELECT Id FROM TraceFlag WHERE TracedEntityId = '${TracedEntitySfId}' AND ExpirationDate >= ${NOW} ORDER BY ExpirationDate DESC LIMIT 1`, true);
+    const traceFlags = await conn.query(`SELECT Id FROM TraceFlag WHERE TracedEntityId = '${TracedEntitySfId}' AND ExpirationDate >= ${NOW} ORDER BY ExpirationDate DESC LIMIT 1`, true);
     if (traceFlags || traceFlags.length > 0) {
         return traceFlags[0];
     } else {
@@ -86,25 +85,25 @@ async function getActiveTraceFlag(TracedEntitySfId) {
     }
 }
 
-export async function disableDebugLog() {
+export async function disableDebugLog(conn) {
 
     const tracedEntityType = await vscode.window.showQuickPick(TRACED_ENTITY_TYPES, { placeHolder: 'Select Traced Entity Type' });
 
     if (tracedEntityType) {
-        const TracedEntitySfId = await getTraceEntityId(tracedEntityType);
+        const TracedEntitySfId = await getTraceEntityId(conn, tracedEntityType);
 
         await vscode.window.withProgress(
             {
                 title: 'SPB: Delete Active Trace Flag',
                 location: vscode.ProgressLocation.Notification
             },
-            () => deleteActiveTraceFlag(TracedEntitySfId)
+            () => deleteActiveTraceFlag(conn, TracedEntitySfId)
         );
         hideTraceFlagStatus(tracedEntityType);
     }
 }
 
-export async function deleteApexLogs() {
+export async function deleteApexLogs(conn) {
     const userChoise = await vscode.window.showQuickPick(['No', 'Yes'], { placeHolder: 'Are you sure you want to delete all the Apex Logs from the org?' })
     if (userChoise === 'Yes') {
         await vscode.window.withProgress(
@@ -112,12 +111,12 @@ export async function deleteApexLogs() {
                 title: 'Delete Apex Logs',
                 location: vscode.ProgressLocation.Notification
             },
-            () => deleteLogs()
+            () => deleteLogs(conn)
         );
     }
 }
 
-async function deleteLogs() {
-    let apexLogs = await asyncQuery(`SELECT Id FROM ApexLog ORDER BY LastModifiedDate ASC LIMIT 50000`, true);
-    await deleteRecords(apexLogs);
+async function deleteLogs(conn) {
+    let apexLogs = await conn.query(`SELECT Id FROM ApexLog ORDER BY LastModifiedDate ASC LIMIT 50000`, true);
+    await conn.deleteRecords(apexLogs);
 }

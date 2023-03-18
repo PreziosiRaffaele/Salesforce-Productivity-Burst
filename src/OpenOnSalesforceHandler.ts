@@ -1,19 +1,18 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { asyncQuery, isStandardField, getObjectFieldDeveloperName, isCustomMetadata, isPlatformEvent } from './Utils';
-import { Connection } from './Connection';
-import { getData, getObjectId } from './GetDataFromOrg'
+import {isStandardField, getObjectFieldDeveloperName, isCustomMetadata, isPlatformEvent } from './Utils';
+import { findData, getObjectId } from './GetDataFromOrg'
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
 
-export async function openOnSaleforce(){
+export async function openOnSaleforce(conn){
     try{
         await vscode.window.withProgress(
             {
                 title: 'SPB: Open On Salesforce',
                 location: vscode.ProgressLocation.Notification
             },
-            () => openLink()
+            () => openLink(conn)
         );
         }catch(error){
             console.log(error)
@@ -21,13 +20,14 @@ export async function openOnSaleforce(){
         }
     }
 
-    async function openLink(){
+    async function openLink(conn){
         const openedFile = vscode.window.activeTextEditor;
         const pathParsed = path.parse(openedFile.document.fileName);
         const extension = getExtension(pathParsed.base)
-        const metadata = new Factory().create(extension, pathParsed);
+        const metadata = new Factory().create(conn, extension, pathParsed);
         const url = await metadata.getUrl();
-        const completeUrl = `${Connection.getConnection().getInstanceUrl()}/${url}`;
+        const instanceUrl = await conn.getInstanceUrl();
+        const completeUrl = `${instanceUrl}/${url}`;
         await execAsync(`start ${completeUrl}`);
     }
 
@@ -42,41 +42,41 @@ export async function openOnSaleforce(){
     }
     class Factory{
 
-        create = (extension, pathParsed) => {
-            if(!extension || !pathParsed) {
+        create = (conn, extension, pathParsed) => {
+            if(!conn || !extension || !pathParsed) {
                 throw 'It cannot be opened';
             }
             let metadata;
             if(extension === 'flow-meta.xml'){
-                metadata = new Flow(extension, pathParsed);
+                metadata = new Flow(conn, extension, pathParsed);
             }else if(extension === 'field-meta.xml'){
-                metadata = new Field(extension, pathParsed);
+                metadata = new Field(conn, extension, pathParsed);
             }else if(extension === 'validationRule-meta.xml'){
-                metadata = new ValidationRule(extension, pathParsed);
+                metadata = new ValidationRule(conn, extension, pathParsed);
             }else if(extension === 'flexipage-meta.xml'){
-                metadata = new FlexiPage(extension, pathParsed);
+                metadata = new FlexiPage(conn, extension, pathParsed);
             }else if(extension === 'profile-meta.xml'){
-                metadata = new Profile(extension, pathParsed);
+                metadata = new Profile(conn, extension, pathParsed);
             }else if(extension === 'permissionset-meta.xml'){
-                metadata = new PermissionSet(extension, pathParsed);
+                metadata = new PermissionSet(conn, extension, pathParsed);
             }else if(extension === 'permissionsetgroup-meta.xml'){
-                metadata = new PermissionSetGroup(extension, pathParsed);
+                metadata = new PermissionSetGroup(conn, extension, pathParsed);
             }else if(extension === 'cls'){
-                metadata = new ApexClass(extension, pathParsed);
+                metadata = new ApexClass(conn, extension, pathParsed);
             }else if(extension === 'trigger'){
-                metadata = new ApexTrigger(extension, pathParsed);
+                metadata = new ApexTrigger(conn, extension, pathParsed);
             }else if(extension === 'recordType-meta.xml'){
-                metadata = new RecordType(extension, pathParsed);
+                metadata = new RecordType(conn, extension, pathParsed);
             }else if(extension === 'layout-meta.xml'){
-                metadata = new PageLayout(extension, pathParsed);
+                metadata = new PageLayout(conn, extension, pathParsed);
             }else if(extension === 'object-meta.xml'){
-                metadata = new SObject(extension, pathParsed);
-            }else if(extension === 'md-meta.xml'){
-                metadata = new CustomMetadata(extension, pathParsed);
+                metadata = new SObject(conn, extension, pathParsed);
             }else if(extension === 'globalValueSet-meta.xml'){
-                metadata = new GlobalValueSet(extension, pathParsed);
+                metadata = new GlobalValueSet(conn, extension, pathParsed);
             }else if(extension === 'quickAction-meta.xml'){
-                metadata = new QuickAction(extension, pathParsed);
+                metadata = new QuickAction(conn, extension, pathParsed);
+            }else if(extension === 'approvalProcess-meta.xml'){
+                metadata = new ApprovalProcess(conn, extension, pathParsed);
             }else{
                 throw "Metadata not supported";
             }
@@ -89,17 +89,26 @@ export async function openOnSaleforce(){
         extension;
         pathParsed;
         metadataApiName;
+        conn;
 
-        constructor(extension, pathParsed){
+        constructor(conn, extension, pathParsed){
+            this.conn = conn;
             this.extension = extension;
             this.pathParsed = pathParsed;
             this.metadataApiName = pathParsed.base.substring(0, ((pathParsed.base.length - (extension.length + 1))))
         }
     }
 
+    class ApprovalProcess extends Metadata{
+        async getUrl(){
+            const data = await findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName.split('.')[1]});
+            return `/lightning/setup/ApprovalProcesses/page?address=%2F${data.Id}`
+        }
+    }
+
     class SObject extends Metadata{
         async getUrl(){
-            const objectId = await getObjectId(this.metadataApiName);
+            const objectId = await getObjectId(this.conn, this.metadataApiName);
             if(isCustomMetadata(this.metadataApiName)){
                 return `lightning/setup/CustomMetadata/page?address=%2F${objectId}%3Fsetupid%3DCustomMetadata`
             }else if(isPlatformEvent(this.metadataApiName)){
@@ -112,19 +121,8 @@ export async function openOnSaleforce(){
 
     class GlobalValueSet extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'DeveloperName': this.metadataApiName});
-            return `lightning/setup/Picklists/page?address=%2F${data[0].Id}`
-        }
-    }
-
-    class CustomMetadata extends Metadata{
-        async getUrl(){
-            const splitObjectNameCmdName = this.metadataApiName.split('.');
-            const objectName = splitObjectNameCmdName[0];
-            const cmdRecordDeveloperName = splitObjectNameCmdName[1];
-
-            const queryResult = await asyncQuery(`SELECT Id FROM ${objectName}__mdt WHERE DeveloperName = '${decodeURIComponent(cmdRecordDeveloperName)}'`, false);
-            return `lightning/setup/CustomMetadata/page?address=%2F${queryResult[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName});
+            return `lightning/setup/Picklists/page?address=%2F${data.Id}`
         }
     }
 
@@ -134,10 +132,10 @@ export async function openOnSaleforce(){
             const objectName = splitObjectNameLayoutName[0];
             const quickActionName = splitObjectNameLayoutName[1];
             const [objectId, data] = await Promise.all([
-                getObjectId(objectName),
-                getData(this.constructor.name, {'DeveloperName': quickActionName})
+                getObjectId(this.conn, objectName),
+                findData(this.conn, this.constructor.name, {'DeveloperName': quickActionName})
             ]);
-            return `lightning/setup/ObjectManager/${objectId}/ButtonsLinksActions/${data[0].Id}/view`
+            return `lightning/setup/ObjectManager/${objectId}/ButtonsLinksActions/${data.Id}/view`
         }
     }
 
@@ -148,10 +146,10 @@ export async function openOnSaleforce(){
             const objectName = splitObjectNameLayoutName[0];
             const layoutName = splitObjectNameLayoutName[1];
             const [objectId, data] = await Promise.all([
-                getObjectId(objectName),
-                getData(this.constructor.name, {'Name': decodeURIComponent(layoutName)})
+                getObjectId(this.conn, objectName),
+                findData(this.conn, this.constructor.name, {'Name': decodeURIComponent(layoutName)})
             ]);
-            return `lightning/setup/ObjectManager/${objectId}/PageLayouts/${data[0].Id}/view`
+            return `lightning/setup/ObjectManager/${objectId}/PageLayouts/${data.Id}/view`
         }
     }
 
@@ -160,66 +158,66 @@ export async function openOnSaleforce(){
             const arrayPath = this.pathParsed.dir.split(path.sep);
             let objectFolderName = arrayPath[arrayPath.length - 2];
             const [objectId, data] = await Promise.all([
-                getObjectId(objectFolderName),
-                getData(this.constructor.name, {'DeveloperName': this.metadataApiName})
+                getObjectId(this.conn, objectFolderName),
+                findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName})
             ]);
-            return `lightning/setup/ObjectManager/${objectId}/RecordTypes/${data[0].Id}/view`
+            return `lightning/setup/ObjectManager/${objectId}/RecordTypes/${data.Id}/view`
         }
     }
 
     class Flow extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'DeveloperName': this.metadataApiName});
-            return `lightning/setup/Flows/page?address=%2F${data[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName});
+            return `lightning/setup/Flows/page?address=%2F${data.Id}`
         }
     }
 
     class ValidationRule extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'ValidationName': this.metadataApiName});
-            return `lightning/setup/ObjectManager/${data.EntityDefinitionId}/ValidationRules/${data[0].Id}/view`;
+            const data = await findData(this.conn, this.constructor.name, {'ValidationName': this.metadataApiName});
+            return `lightning/setup/ObjectManager/${data.EntityDefinitionId}/ValidationRules/${data.Id}/view`;
         }
     }
 
     class FlexiPage extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'DeveloperName': this.metadataApiName});
-            return `visualEditor/appBuilder.app?id=${data[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName});
+            return `visualEditor/appBuilder.app?id=${data.Id}`
         }
     }
 
     class Profile extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'Name': this.metadataApiName});
-            return `lightning/setup/EnhancedProfiles/page?address=%2F${data[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'Name': this.metadataApiName});
+            return `lightning/setup/EnhancedProfiles/page?address=%2F${data.Id}`
         }
     }
 
     class PermissionSet extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'Name': this.metadataApiName});
-            return `lightning/setup/PermSets/page?address=%2F${data[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'Name': this.metadataApiName});
+            return `lightning/setup/PermSets/page?address=%2F${data.Id}`
         }
     }
 
     class PermissionSetGroup extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'DeveloperName': this.metadataApiName});
-            return `lightning/setup/PermSetGroups/page?address=%2F${data[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName});
+            return `lightning/setup/PermSetGroups/page?address=%2F${data.Id}`
         }
     }
 
     class ApexClass extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'Name': this.metadataApiName});
-            return `lightning/setup/ApexClasses/page?address=%2F${data[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'Name': this.metadataApiName});
+            return `lightning/setup/ApexClasses/page?address=%2F${data.Id}`
         }
     }
 
     class ApexTrigger extends Metadata{
         async getUrl(){
-            const data = await getData(this.constructor.name, {'Name': this.metadataApiName});
-            return `lightning/setup/ApexTriggers/page?address=%2F${data[0].Id}`
+            const data = await findData(this.conn, this.constructor.name, {'Name': this.metadataApiName});
+            return `lightning/setup/ApexTriggers/page?address=%2F${data.Id}`
         }
     }
 
@@ -235,14 +233,14 @@ export async function openOnSaleforce(){
                 url = `lightning/setup/ObjectManager/${objectFolderName}/FieldsAndRelationships/${this.metadataApiName}/view`;
             }else{
                 this.metadataApiName = getObjectFieldDeveloperName(this.metadataApiName);
-                const objectId = await getObjectId(objectFolderName);
-                const fieldData = await getData(this.constructor.name, {'DeveloperName': this.metadataApiName, 'TableEnumOrId': objectId})
+                const objectId = await getObjectId(this.conn, objectFolderName);
+                const fieldData = await findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName, 'TableEnumOrId': objectId})
                 if(isCustomMetadata(objectFolderName)){
-                    url = `lightning/setup/CustomMetadata/page?address=%2F${fieldData[0].Id}%3Fsetupid%3DCustomMetadata`;
+                    url = `lightning/setup/CustomMetadata/page?address=%2F${fieldData.Id}%3Fsetupid%3DCustomMetadata`;
                 }else if(isPlatformEvent(objectFolderName)){
-                    url = `lightning/setup/EventObjects/page?address=%2F${fieldData[0].Id}%3Fsetupid%3DEventObjects`;
+                    url = `lightning/setup/EventObjects/page?address=%2F${fieldData.Id}%3Fsetupid%3DEventObjects`;
                 }else{
-                    url = `lightning/setup/ObjectManager/${objectId}/FieldsAndRelationships/${fieldData[0].Id}/view`;
+                    url = `lightning/setup/ObjectManager/${objectId}/FieldsAndRelationships/${fieldData.Id}/view`;
                 }
             }
             return url;

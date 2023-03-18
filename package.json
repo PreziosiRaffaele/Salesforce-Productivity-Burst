@@ -3,20 +3,28 @@
     "displayName": "Salesforce Productivity Burst",
     "description": "Boost your productivity on Salesforce with new commands",
     "icon": "Icon.png",
-    "version": "4.1.14",
+    "version": "4.1.16",
     "publisher": "RaffaelePreziosi",
-    "repository": { "type": "git", "url": "https://github.com/PreziosiRaffaele/SalesforceProductivityBurst.git"},
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/PreziosiRaffaele/SalesforceProductivityBurst.git"
+    },
     "engines": {
         "vscode": "^1.23.0"
     },
     "categories": [
-        "Extension Packs","Other"
+        "Extension Packs",
+        "Other"
     ],
-    "keywords":[
-        "Salesforce", "Apex", "Test","sfdx","salesforcedx"
+    "keywords": [
+        "Salesforce",
+        "Apex",
+        "Test",
+        "sfdx",
+        "salesforcedx"
     ],
     "activationEvents": [
-        "*"
+        "workspaceContains:sfdx-project.json"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -82,5 +90,7 @@
         "typescript": "^2.6.1",
         "vscode": "^1.1.30"
     },
-    "extensionDependencies" :["salesforce.salesforcedx-vscode"]
+    "extensionDependencies": [
+        "salesforce.salesforcedx-vscode"
+    ]
 }
