@@ -88,6 +88,6 @@
         "@types/mocha": "^2.2.42",
         "@types/node": "^10.10.0",
         "typescript": "^2.6.1",
-        "vscode": "^1.76.1"
+        "vscode": "^1.1.30"
     }
 }
