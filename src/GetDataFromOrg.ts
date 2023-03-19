@@ -144,8 +144,9 @@ export async function getOrgDetails(orgName){
     let orgdetail = JSON.parse(orgsDetails).find((org) => {
         if(org.alias){
             return org.alias.split(',').includes(orgName);
+        }else{//SCRATCH ORG WITHOUT ALIAS
+            return org.username === orgName;
         }
-        return false;
     });
 
     if(!orgdetail && !dataReloaded){
@@ -153,8 +154,9 @@ export async function getOrgDetails(orgName){
         orgdetail = JSON.parse(orgsDetails).find((org) => {
             if(org.alias){
                 return org.alias.split(',').includes(orgName);
+            }else{//SCRATCH ORG WITHOUT ALIAS
+                return org.username === orgName;
             }
-            return false;
         });
     }
 
