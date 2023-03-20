@@ -97,3 +97,7 @@ export function createFile(path, contents, cb) {
         fs.writeFile(path, contents, cb);
     });
 }
+
+export function isWindows(){
+    return (process.platform === "win32")
+}
