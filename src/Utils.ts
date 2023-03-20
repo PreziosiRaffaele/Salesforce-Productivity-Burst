@@ -15,8 +15,9 @@ export function getCurrentClassName(){
     if(!openedClass || isInvalidFile(openedClass)){
         throw 'Apex Class/Trigger not opened!';
     }
-    const pathClass = openedClass.document.fileName;
-    return pathClass.substring(pathClass.lastIndexOf("\\")+1,pathClass.lastIndexOf("."));
+    const pathParsed = path.parse(openedClass.document.fileName);
+    const className = pathParsed.base.split(".")[0];
+    return className;
 }
 
 /**

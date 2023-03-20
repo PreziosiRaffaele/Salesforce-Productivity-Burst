@@ -14,7 +14,7 @@ export async function getCoverage(conn) {
 
     cleanCoverage(openedClass);
 
-    let className = getCurrentClassName();
+    const className = getCurrentClassName();
 
     if (!conn.mapNameClass_MapMethodName_Coverage.has(className)) {
         await vscode.window.withProgress(
