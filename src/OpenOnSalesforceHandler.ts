@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import {isStandardField, getObjectFieldDeveloperName, isCustomMetadata, isPlatformEvent } from './Utils';
+import {isStandardField, getObjectFieldDeveloperName, isCustomMetadata, isPlatformEvent, isWindows } from './Utils';
 import { findData, getObjectId } from './GetDataFromOrg'
 const util = require('util');
 const execAsync = util.promisify(require('child_process').exec);
@@ -28,7 +28,12 @@ export async function openOnSaleforce(conn){
         const url = await metadata.getUrl();
         const instanceUrl = await conn.getInstanceUrl();
         const completeUrl = `${instanceUrl}/${url}`;
-        await execAsync(`start ${completeUrl}`);
+        console.log(completeUrl);
+        if(isWindows()){
+            await execAsync(`start ${completeUrl}`);
+        }else{
+            await execAsync(`open ${completeUrl}`);
+        }
     }
 
     function getExtension(pathParsedBase){
@@ -102,7 +107,7 @@ export async function openOnSaleforce(conn){
     class ApprovalProcess extends Metadata{
         async getUrl(){
             const data = await findData(this.conn, this.constructor.name, {'DeveloperName': this.metadataApiName.split('.')[1]});
-            return `/lightning/setup/ApprovalProcesses/page?address=%2F${data.Id}`
+            return `lightning/setup/ApprovalProcesses/page?address=%2F${data.Id}`
         }
     }
 
