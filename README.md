@@ -1,6 +1,17 @@
 # <b>Salesforce Productivity <span style="color: red;">Burst</span></b>
 **Boost your productivity** on Salesforce with new VsCode commands.<br>
 <code>(Contact me on [My Linkedin](https://www.linkedin.com/in/raffaele-preziosi-5835ba186/) for any ideas or suggestions)</code>
+
+## Quick opening metadata in SFDC from xml files.
+- **Instructions:**
+  1. Run the command SPB:Refresh Metadata (It will cache all the necessary data)
+  2. Open a supported metadata in VSCode
+  3. Click search icon in the status bar
+
+> *Supported Metadata: flow, field, validation Rule, quickAction, flexi page, profile, permission set, permission set group, class, trigger, recordtype, layout*
+
+![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/SalesforceProductivityBurst/master/OpenOnSalesForceDemo.gif)
+
 ## Get Total Coverage and single methods test coverage of your Apex Classes/Triggers as in Salesforce Developer Console.
 
 - **Instructions:**
@@ -13,16 +24,6 @@
 > *Tip: disable retrieve-test-code-coverage from settings to speed up your test.*
 
 ![Recording of Apex Get Coverage](https://raw.githubusercontent.com/PreziosiRaffaele/SalesforceProductivityBurst/master/demo.gif)
-
-## Quick opening metadata in SFDC from xml files.
-- **Instructions:**
-  1. Run the command SPB:Refresh Metadata (It will cache all the necessary data)
-  2. Open a supported metadata in VSCode
-  3. Click search icon in the status bar
-
-> *Supported Metadata: flow, field, validation Rule, quickAction, flexi page, profile, permission set, permission set group, class, trigger, recordtype, layout*
-
-![Recording of opening on Salesforce](https://raw.githubusercontent.com/PreziosiRaffaele/SalesforceProductivityBurst/master/OpenOnSalesForceDemo.gif)
 
 ## Quick activating of debug logging for your User, Automated Process, Integration Platform User.
 - **Instructions:**
